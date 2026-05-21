@@ -20,7 +20,7 @@
 
 ![W5 throttling fixed](./images/APIThrottling.png)
 
-<sub>Note: Live API Gateway throttling đã rời khỏi narrative cũ `1 request/giây`; có default throttling cho stage và route-level throttling riêng cho `POST /api/chat/messages`.</sub>
+<sub>Note: Cấu hình giới hạn tốc độ (Throttling) cho route /api/chat/messages với Rate=10 và Burst=20. Đây là một lớp bảo vệ 'Operations Hardening' quan trọng nhằm ngăn chặn các cuộc tấn công DDoS hoặc lỗi logic từ phía client gây ra hiện tượng 'runaway costs' (chi phí tăng vọt ngoài ý muốn) khi gọi các dịch vụ đắt tiền như Lambda và Bedrock.</sub>
 
 #### 1.2 Backup selection không còn mô tả kiểu assign-by-prefix
 
@@ -32,7 +32,7 @@
 
 ![W5 provisioned concurrency config](./images/Provisioned.png)
 
-<sub>Note: Chat Lambda đã có reserved/provisioned concurrency config trên live AWS. Đây là evidence tốt hơn cho hạ tầng, nhưng chưa tự động thay thế cho một warm-start explanation đúng.</sub>
+<sub>Note: Thiết lập các cơ chế an toàn cho Lambda: (1) Reserved Concurrency (5) giới hạn số lượng task chạy đồng thời để tránh làm cạn kiệt tài nguyên của account. (2) Provisioned Concurrency (2) trên alias live giúp loại bỏ độ trễ 'khởi động lạnh' (Cold Start) cho chatbot AI. (3) Recursive loop detection được kích hoạt để ngăn chặn các vòng lặp vô hạn có thể gây cháy ngân sách trong vài phút."</sub>
 
 ---
 
@@ -40,29 +40,23 @@
 
 ### 2.1 Tagging — Bốn tag key bắt buộc trên mọi billable resource
 
-**Screenshot tag trên EC2 / ECS:**
+**Screenshot tag trên EC2:**
 
 ![Tags on EC2/ECS](./images/EC2Tag.png)
-
-<sub>Note: Cả 4 tag key hiển thị trên instance đã redeploy.</sub>
 
 **Screenshot tag trên RDS:**
 
 ![Tags on RDS](./images/RDSTag.png)
 
-<sub>Note: Cả 4 tag key hiển thị trên RDS hexacode-prod-db.</sub>
-
 **Screenshot tag trên Lambda:**
 
 ![Tags on Lambda](./images/LambdaTag.png)
-
-<sub>Note: Cả 4 tag key hiển thị trên Lambda functions đã redeploy.</sub>
 
 **Screenshot tag trên S3:**
 
 ![Tags on S3](./images/S3Tag.png)
 
-<sub>Note: Cả 4 tag key hiển thị trên S3 buckets của app.</sub>
+<sub>Note: Mọi Billable Resource (RDS, Lambda, S3, EC2) đã được áp dụng bộ Tag Schema nhất quán: Project=hexacode, Environment=production, CostCenter=G6, Owner=hoang. Điều này đảm bảo khả năng truy vết chi phí 100% đến từng dịch vụ đơn lẻ.</sub>
 
 ---
 
@@ -84,13 +78,13 @@
 
 ![Cost Explorer filter](./images/CostExplorer2.png)
 
-<sub>Note: Cost Explorer filter theo `Application=HexaCode` — thấy chi phí breakdown theo service chỉ của workload nhóm, không phải toàn account.</sub>
+<sub>Note: </sub>
 
 **Tool 3 — Cost Anomaly Detection (nếu có):**
 
 ![Cost Anomaly Detection](./images/CostAnomalyDetection.png)
 
-<sub>Note: Monitor scope về `Application=HexaCode`. Alert subscription được xác nhận.</sub>
+<sub>Note: Cấu hình ML-based monitor 'Finance Team' với ngưỡng $75. Alert subscription đã được xác nhận (Confirmed) qua email nahoangit@gmail.com để phát hiện các biến động chi phí bất thường ngay lập tức.</sub>
 
 ---
 
@@ -157,7 +151,7 @@ Trong AWS Billing & Cost Explorer, nhóm sử dụng cơ chế lọc hai tầng:
 
 ![Cost Guard Lambda](./images/CostGuard.png)
 
-<sub>Note: Lambda function đã deploy, runtime Python, last modified timestamp.</sub>
+<sub>Note: Lambda CostGuardLambda được đấu nối với SNS Trigger. IAM Role đi kèm thực thi nguyên tắc Least Privilege với Inline Policy CostGuard-ECS chỉ cho phép quyền ecs:UpdateService và ecs:ListServices, không có quyền can thiệp vào các dịch vụ khác.</sub>
 
 **Lambda code snippet:**
 
@@ -330,7 +324,7 @@ def stop_unprotected_services():
 
 ![EventBridge schedule](./images/EventBridgeDaily.png)
 
-<sub>Note: EventBridge Scheduler cron chạy daily invoke Cost Guard Lambda. Ảnh nên phản ánh đúng cron expression và timezone đang có trên live AWS.</sub>
+<sub>Note: Schedule daily-cost-guard được cấu hình chạy theo biểu thức cron 0 9 * * ? * (9h sáng hàng ngày), múi giờ Asia/Ho_Chi_Minh. Đây là primary trigger giúp dọn dẹp tài nguyên thừa vào mỗi đầu ngày làm việc.</sub>
 
 ---
 
@@ -340,19 +334,19 @@ def stop_unprotected_services():
 
 ![Service before stop](./images/ServiceBefore.png)
 
-<sub>Note: EC2 instance (hoặc RDS) đang ở trạng thái Running trước khi Lambda chạy.</sub>
+<sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
 
 **Service after stop note:**
 
 ![Instance after stop](./images/ServiceAfter.png)
 
-<sub>Note: Cùng instance đã chuyển sang Stopped sau khi Cost Guard Lambda được invoke.</sub>
+<sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
 
 **CloudTrail stop event:**
 
 ![CloudTrail stop event](./images/CloudTrailLog.png)
 
-<sub>Note: CloudTrail event xác nhận Lambda đã gọi StopInstances/StopDBInstance — thấy eventName, eventTime, userAgent (Lambda role ARN), và instanceId bị stop.</sub>
+<sub>Note: Sự kiện UpdateService được ghi nhận. User name: CostGuardLambda xác nhận hành động này do Automation thực hiện, thay đổi desiredCount về 0 để dừng tiêu tốn chi phí Fargate.</sub>
 
 ---
 
@@ -360,15 +354,13 @@ def stop_unprotected_services():
 
 ![Budgets daily](./images/ProdBudget.png)
 
-<sub>Note: AWS Budgets daily budget → SNS topic được wire. Khi budget vượt ngưỡng, SNS publish message → Lambda được invoke.</sub>
-
 ![Budgets SNS](./images/SNS.png)
 
-<sub>Note: AWS Budgets daily budget → SNS topic được wire. Khi budget vượt ngưỡng, SNS publish message → Lambda được invoke.</sub>
+<sub>Note: Trạng thái Confirmed của Subscription với giao thức LAMBDA xác nhận rằng mọi thông báo 'ALARM' từ AWS Budgets sẽ được chuyển tiếp ngay lập tức đến Lambda function.</sub>
 
 ![Budgets SNS wiring](./images/CostGuard.png)
 
-<sub>Note: AWS Budgets daily budget → SNS topic được wire. Khi budget vượt ngưỡng, SNS publish message → Lambda được invoke.</sub>
+<sub>Note: Kết quả demo chuỗi hành động (End-to-end chain). Màn hình CloudShell thực hiện sns publish giả lập, ngay lập tức CloudWatch Logs (Live tailing) ghi nhận Lambda nhận event và thực hiện quét/tắt service thành công. Điều này xác nhận hệ thống sẵn sàng hoạt động trong Production mà không cần chờ dữ liệu billing thật (latency 8-24h).</sub>
 
 **Test SNS publish — demonstrate chain:**
 
