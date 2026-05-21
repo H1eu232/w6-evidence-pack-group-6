@@ -11,11 +11,54 @@
 | **Member Names** | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Hoàng Thông · Thành Tâm |
 | **Link Repo** | `[GitHub repo URL]` |
 | **W5 Evidence Pack** | `[Link tới docs/W5_evidence.md commit]` |
-| **W5 Feedback đã giải quyết** | `[Tuỳ chọn — nhắc ngắn gọn nếu có]` |
+
+### W5 Feedback đã giải quyết
+
+> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
+> - Mục này chỉ nên giữ các feedback đã có evidence trực quan từ AWS Console hoặc source-of-truth đủ mạnh.
+> - Các feedback chưa đóng hoàn toàn vẫn để ở `docs/envidence_drift.md`, không claim ở đây.
+
+#### 1.1 API Gateway throttling không còn giữ mức 1 RPS
+
+> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
+> - AWS Console → **API Gateway** → **APIs** → HTTP API `5l48bwt6ck` → **Stages** → chọn stage đang deploy.
+> - Chụp phần **Default route settings** để thấy throttling không còn là `1 request/giây`; theo source-of-truth hiện tại là `burst 200 / rate 100`.
+> - Sau đó vào **Routes** → `POST /api/chat/messages` để chụp limit riêng cho chat route; theo source-of-truth hiện tại là `burst 20 / rate 10`.
+> - Nếu console đang hiển thị khác hẳn, không dùng ảnh này để claim đã sửa hoàn toàn; đưa lại item vào `envidence_drift.md`.
+
+![W5 throttling fixed](./images/w5-feedback-throttling.png)
+<sub>Note: Live API Gateway throttling đã rời khỏi narrative cũ `1 request/giây`; có default throttling cho stage và route-level throttling riêng cho `POST /api/chat/messages`.</sub>
+
+#### 1.2 Backup selection không còn mô tả kiểu assign-by-prefix
+
+> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
+> - AWS Console → **AWS Backup** → **Backup plans** → mở plan `hexacode-prod-daily-backups` hoặc plan tương ứng → **Resource assignments** / **Protected resources**.
+> - Chụp sao cho thấy resource assignment hiện tại gắn vào các resource thật, không chỉ mô tả prefix mơ hồ trong narrative.
+> - Nếu console chỉ hiện 2 resource hoặc không nhìn rõ danh sách resource thật, **không claim** feedback này đã đóng hoàn toàn; giữ nó trong `envidence_drift.md`.
+> - Nếu cần ảnh source-of-truth ở code để bổ trợ, chụp thêm `terraform/main.tf` + `terraform/modules/backup/main.tf`, nhưng ưu tiên AWS Console trước.
+
+![W5 backup selection fixed](./images/w5-feedback-backup-selection.png)
+<sub>Note: Backup selection đã được đưa về hướng explicit resource assignment thay vì narrative `assign-by-ARN-prefix`. Chỉ dùng ảnh này để claim closure khi console thể hiện đủ resource thật theo yêu cầu mentor.</sub>
+
+#### 1.3 Provisioned concurrency đã có cấu hình live, nhưng phần diễn giải warm-start phải viết đúng
+
+> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
+> - AWS Console → **Lambda** → function chat của app → **Configuration** → **Concurrency**.
+> - Chụp phần **Reserved concurrency** và **Provisioned concurrency** để chứng minh hạ tầng đã có cấu hình, thay vì chỉ nói suông trong W5.
+> - Ảnh này chỉ chứng minh **cấu hình tồn tại**; phần giải thích warm-start vẫn phải dựa trên log/init-duration đúng ngữ cảnh nếu muốn claim đã đóng hoàn toàn.
+> - Vì vậy, nếu chỉ mới có ảnh config mà chưa có diễn giải/log tốt hơn, vẫn giữ item narrative này ở `envidence_drift.md`.
+
+![W5 provisioned concurrency config](./images/w5-feedback-provisioned-concurrency.png)
+<sub>Note: Chat Lambda đã có reserved/provisioned concurrency config trên live AWS. Đây là evidence tốt hơn cho hạ tầng, nhưng chưa tự động thay thế cho một warm-start explanation đúng.</sub>
 
 ---
 
 ## Section 2 — MH-COST-V — Cost Visibility & Attribution
+
+> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
+> - Phần mở đầu này dùng để chứng minh nhóm đã tiếp thu feedback W5 và sửa source-of-truth/operational posture trước khi sang W6.
+> - Nếu mentor hỏi sâu, ưu tiên nói rõ điểm nào đã có **live AWS confirmation** và điểm nào mới dừng ở **Terraform/doc correction**.
+> - Các mục chưa đóng hẳn đã được tách sang `docs/envidence_drift.md` để xử lý tiếp, không claim quá mức trong evidence pack chính.
 
 ### 2.1 Tagging — Bốn tag key bắt buộc trên mọi billable resource
 
@@ -27,6 +70,13 @@
 | `Environment` | `dev` | Không trộn "dev" và "Dev" |
 | `CostCenter` | `G6` | Group ID |
 | `Application` | `HexaCode` | Nhất quán — không đổi case |
+
+> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
+> - `w6-tags-ec2.png`: AWS Console → **EC2** → **Instances** → chọn instance app đã redeploy → tab **Tags**. Chụp sao cho thấy **Name** + đủ 4 key `Owner`, `Environment`, `CostCenter`, `Application`.
+> - `w6-tags-rds.png`: AWS Console → **RDS** → **Databases** → chọn DB instance dùng cho app → tab **Tags**. Chụp rõ tên DB và đủ 4 tag.
+> - `w6-tags-lambda.png`: AWS Console → **Lambda** → chọn function của app hoặc function W6 bạn tự tạo → tab **Configuration** / **Tags**. Theo drift audit, `CostGuardLambda` hiện đang **chưa có tag**, nên nếu dùng function này cho MH-COST-V thì phải tag lại trước khi chụp.
+> - `w6-tags-s3.png`: AWS Console → **S3** → chọn bucket của app → tab **Properties** → **Tags**. Nếu bucket đang chỉ có tag cũ như `Project` mà chưa có `Application`, ảnh này chưa đạt rubric.
+> - Lưu ý theo `docs/aws-console-drift-audit.md`: tag live hiện còn **không nhất quán** (`Environment` có cả `prod` và `production`), nên nên chuẩn hoá xong rồi mới chụp bộ ảnh Section 2.
 
 **Screenshot tag trên EC2 / ECS:**
 
@@ -584,547 +634,6 @@ def check_and_fix_bucket(bucket_name):
 | W4 | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]` |
 | W5 | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
 | W6 | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]` |
-
-### W5 Feedback đã giải quyết *(tuỳ chọn)*
-
-`[e.g. "Trainer W5 feedback: MH5 scaling pattern chưa có visual evidence. W6 đã thêm CloudWatch Throttles metric screenshot cho Reserved Concurrency."]`
-
----
-
-## Bonus *(Tuỳ chọn)*
-
-**Screenshot Lambda function:**
-
-![Security Guard Lambda](./images/w6-sec-guard-lambda.png)
-<sub>Note: Lambda function đã deploy với least-privilege IAM role.</sub>
-
-**Lambda code snippet:**
-
-```python
-import boto3
-
-s3 = boto3.client('s3')
-
-def handler(event, context):
-    # Lấy bucket name từ CloudTrail event (nếu trigger từ EventBridge)
-    bucket_name = event.get('detail', {}).get('requestParameters', {}).get('bucketName')
-    
-    if not bucket_name:
-        # Fallback: scan tất cả bucket nếu trigger từ scheduled cron
-        buckets = s3.list_buckets()['Buckets']
-        for bucket in buckets:
-            check_and_fix_bucket(bucket['Name'])
-        return
-    
-    check_and_fix_bucket(bucket_name)
-
-def check_and_fix_bucket(bucket_name):
-    try:
-        status = s3.get_public_access_block(Bucket=bucket_name)
-        config = status['PublicAccessBlockConfiguration']
-        if not all(config.values()):
-            s3.put_public_access_block(
-                Bucket=bucket_name,
-                PublicAccessBlockConfiguration={
-                    'BlockPublicAcls': True,
-                    'IgnorePublicAcls': True,
-                    'BlockPublicPolicy': True,
-                    'RestrictPublicBuckets': True
-                }
-            )
-            print(f"Fixed public access on bucket: {bucket_name}")
-    except Exception as e:
-        print(f"Error checking bucket {bucket_name}: {e}")
-```
-
----
-
-### 5.2 IAM Role — Least Privilege
-
-![Security Guard IAM role](./images/w6-sec-guard-iam.png)
-<sub>Note: IAM execution role chỉ có `s3:PutPublicAccessBlock`, `s3:GetBucketPolicyStatus`, `s3:ListAllMyBuckets` — hoặc `ec2:RevokeSecurityGroupIngress`, `ec2:DescribeSecurityGroups`. Không có wildcard.</sub>
-
----
-
-### 5.3 EventBridge Trigger
-
-**Trigger type đã chọn:** `[ ] EventBridge rule trên CloudTrail event` &nbsp;&nbsp; `[ ] EventBridge Scheduler daily cron`
-
-![EventBridge trigger config](./images/w6-sec-guard-trigger.png)
-<sub>Note: EventBridge rule trên event source `aws.s3` / event `PutBucketPolicy` / `PutBucketAcl` — hoặc daily cron schedule. Rule đang Enabled.</sub>
-
----
-
-### 5.4 Demo Vòng Lặp Detect → Fix
-
-**Before — Vi phạm được tạo cố ý:**
-
-![Security violation before](./images/w6-sec-before.png)
-<sub>Note: S3 bucket bị set public (Block Public Access tắt) — hoặc Security Group có rule 0.0.0.0/0 port 22. Đây là trạng thái "insecure" trước khi Lambda chạy.</sub>
-
-**After — Lambda đã fix:**
-
-![Security violation after](./images/w6-sec-after.png)
-<sub>Note: Cùng bucket/SG sau khi Lambda detect và remediate — Block Public Access bật lại / rule 0.0.0.0/0 đã bị revoke.</sub>
-
-**CloudTrail event của lần gọi fix API:**
-
-![CloudTrail remediation event](./images/w6-cloudtrail-remediation.png)
-<sub>Note: CloudTrail event `PutPublicAccessBlock` / `RevokeSecurityGroupIngress` — thấy eventName, eventTime, userAgent (Lambda role ARN), và resource bị fix. Đây là bằng chứng remediation đã thực sự chạy.</sub>
-
----
-
-### 5.5 Supporting Preventive Control
-
-**Path đã chọn:** `[ ] Path A — KMS CMK` &nbsp;&nbsp; `[ ] Path B — S3 Block Public Access account-level` &nbsp;&nbsp; `[ ] Path C — IAM Access Analyzer`
-
----
-
-**Nếu Path A — KMS CMK:**
-
-![KMS CMK created](./images/w6-kms-cmk.png)
-<sub>Note: Customer Managed Key `alias/hexacode-rds-prod` đã tạo, Symmetric, key rotation Enabled.</sub>
-
-![KMS applied to data store](./images/w6-kms-applied.png)
-<sub>Note: RDS / EFS / S3 đã được modify để dùng CMK (không phải aws/rds hay aws/s3 — AWS-managed key).</sub>
-
-![CloudTrail kms:GenerateDataKey](./images/w6-kms-cloudtrail.png)
-<sub>Note: CloudTrail event `kms:GenerateDataKey` từ `rds.amazonaws.com` / `s3.amazonaws.com` — xác nhận CMK đang được dùng active khi data được encrypt/decrypt.</sub>
-
----
-
-**Nếu Path B — S3 Block Public Access account-level:**
-
-![S3 BPA account level](./images/w6-s3-bpa-account.png)
-<sub>Note: S3 console → Block Public Access settings for this account → cả 4 setting đều ON.</sub>
-
-![S3 deny policy](./images/w6-s3-deny-policy.png)
-<sub>Note: Bucket policy deny PutObject non-TLS (`aws:SecureTransport=false`).</sub>
-
-![S3 test call denied](./images/w6-s3-test-denied.png)
-<sub>Note: Test call bị policy reject — xác nhận enforce đang hoạt động.</sub>
-
----
-
-**Nếu Path C — IAM Access Analyzer:**
-
-![IAM Access Analyzer enabled](./images/w6-access-analyzer.png)
-<sub>Note: IAM Access Analyzer đã enable trong account.</sub>
-
-![External access finding](./images/w6-access-analyzer-finding.png)
-<sub>Note: ≥1 external-access finding được surface. Triage decision: finding này là gì, có phải intended không, production remediation là gì.</sub>
-
----
-
-### 5.6 Security Threat Statement
-
-**Guard fix misconfiguration gì:**
-`[e.g. "S3 bucket chứa Bedrock KB documents bị set public — mọi người trên internet có thể đọc toàn bộ nội dung knowledge base của app."]`
-
-**Blast radius nếu không remediate:**
-`[e.g. "Toàn bộ 36 markdown documents của GeekBrain — bao gồm incident postmortems, SLA targets, team structure — bị lộ công khai. Kẻ tấn công có thể dùng thông tin này để social engineer hoặc target specific vulnerabilities."]`
-
----
-
-### 5.7 Security-Cost Trade-off Statement
-
-`[1-2 câu nêu tên cost cụ thể và justification. Ví dụ: "KMS CMK tốn $1/tháng per key. Justified vì mỗi decrypt event được log kèm IAM principal — đây là audit trail bắt buộc khi data store chứa thông tin thi cử của người dùng. Cost $1/tháng nhỏ hơn nhiều so với rủi ro compliance khi không có audit trail."]`
-
----
-
-## Section 6 — Project Recap
-
-### Ứng dụng là gì
-
-`[Mô tả ngắn: HexaCode là một coding practice platform cho phép người dùng luyện tập bài tập lập trình, nộp bài, và nhận hỗ trợ từ AI chatbot.]`
-
-### Business Domain
-
-`[e.g. EdTech / Competitive Programming / Online Judge]`
-
-### Các quyết định kiến trúc và thiết kế chính từ W1-W5
-
-| Tuần | Quyết định chính |
-|---|---|
-| W1 | `[e.g. 3-tier architecture: CloudFront → API Gateway → ECS Fargate → RDS]` |
-| W2 | `[e.g. S3 cho static assets, IAM baseline với MFA trên root]` |
-| W3 | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]` |
-| W4 | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]` |
-| W5 | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
-| W6 | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]` |
-
-### W5 Feedback đã giải quyết *(tuỳ chọn)*
-
-`[e.g. "Trainer W5 feedback: MH5 scaling pattern chưa có visual evidence. W6 đã thêm CloudWatch Throttles metric screenshot cho Reserved Concurrency."]`
-
----
-
-## Bonus *(Tuỳ chọn)*
-
-> Chỉ điền nếu đã hoàn tất cả 4 must-have và Evidence Pack.
-
-### B1 `[ ]` gp2 → gp3 EBS Migration (+0.25)
-
-# Lambda error spikes by 5-minute window
-fields @timestamp, @message
-| filter @message like /ERROR/
-| stats count(*) as error_count by bin(5m)
-| sort @timestamp desc
-```
-
-**Log group chạy chống lại:** `/aws/lambda/hexacode-prod-chat`
-
-![Log Insights query result](./images/w6-log-insights-result.png)
-<sub>Note: Query trả về ít nhất 5 result rows thật. Thấy tên query đã save trong danh sách Saved Queries.</sub>
-
-![Log Insights saved query](./images/w6-log-insights-saved.png)
-<sub>Note: Saved query name nhìn thấy trong CloudWatch → Log Insights → Saved Queries.</sub>
-
----
-
-## Section 5 — MH-SEC — Self-Healing Security Guard
-
-### 5.1 Security Guard Lambda
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Trước tiên chốt **một** path demo chính: `S3 public -> PutPublicAccessBlock` hoặc `SG 0.0.0.0/0:22 -> RevokeSecurityGroupIngress`.
-> - AWS Console → **Lambda** → chọn function Security Guard của nhóm → chụp phần function name, runtime, trigger summary, và last modified.
-> - Theo W6 spec, điểm nằm ở detect→fix loop có thật; đừng chỉ chụp function tồn tại mà chưa có remediation evidence.
-
-**Misconfiguration detect và fix:** `[e.g. S3 bucket bị set public → Lambda gọi PutPublicAccessBlock]`
-hoặc `[e.g. Security Group ingress 0.0.0.0/0 trên port 22 → Lambda gọi RevokeSecurityGroupIngress]`
-
-### 5.2 IAM Role — Least Privilege
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Từ function Security Guard → **Configuration** → **Permissions** → click execution role.
-> - Nếu chọn path S3, ảnh policy nên lộ rõ các quyền như `s3:PutPublicAccessBlock` và các quyền read tối thiểu liên quan.
-> - Nếu chọn path SG, ảnh policy nên lộ rõ `ec2:RevokeSecurityGroupIngress` + quyền describe cần thiết.
-
-![Security Guard IAM role](./images/w6-sec-guard-iam.png)
-<sub>Note: IAM execution role chỉ có `s3:PutPublicAccessBlock`, `s3:GetBucketPolicyStatus`, `s3:ListAllMyBuckets` — hoặc `ec2:RevokeSecurityGroupIngress`, `ec2:DescribeSecurityGroups`. Không có wildcard.</sub>
-
----
-
-### 5.3 EventBridge Trigger
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Nếu chọn real-time path: AWS Console → **EventBridge** → **Rules** → rule match CloudTrail event như `PutBucketPolicy`, `PutBucketAcl`, hoặc `AuthorizeSecurityGroupIngress`.
-> - Nếu chọn scheduled fallback: AWS Console → **EventBridge Scheduler** → schedule daily cron.
-> - Chụp màn hình phải thấy rule/schedule name, event pattern hoặc cron expression, target Lambda, và status **Enabled**.
-> - Theo W6 spec, EventBridge rule trên CloudTrail event là evidence mạnh hơn cho self-healing loop; cron fallback vẫn hợp lệ nhưng nên mô tả rõ.
-
-![EventBridge trigger config](./images/w6-sec-guard-trigger.png)
-<sub>Note: EventBridge rule trên event source `aws.s3` / event `PutBucketPolicy` / `PutBucketAcl` — hoặc daily cron schedule. Rule đang Enabled.</sub>
-
----
-
-### 5.4 Demo Vòng Lặp Detect → Fix
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - `w6-sec-before.png`: chụp trạng thái **insecure** ngay sau khi cố ý tạo vi phạm.
-> - `w6-sec-after.png`: chụp cùng resource sau khi Lambda đã remediate.
-> - `w6-cloudtrail-remediation.png`: AWS Console → **CloudTrail** → **Event history** → filter `PutPublicAccessBlock` hoặc `RevokeSecurityGroupIngress`.
-> - Ảnh CloudTrail phải cho thấy eventName, eventTime, và resource bị sửa; nếu thấy principal/role của Lambda thì càng mạnh.
-> - Với path S3, chọn bucket thật của app nhưng tránh bucket nhạy cảm khó rollback. Với path SG, dùng security group test để tránh ảnh hưởng production path ngoài ý muốn.
-
-**Before — Vi phạm được tạo cố ý:**
-
-![Security violation before](./images/w6-sec-before.png)
-<sub>Note: S3 bucket bị set public (Block Public Access tắt) — hoặc Security Group có rule 0.0.0.0/0 port 22. Đây là trạng thái "insecure" trước khi Lambda chạy.</sub>
-
-**After — Lambda đã fix:**
-
-![Security violation after](./images/w6-sec-after.png)
-<sub>Note: Cùng bucket/SG sau khi Lambda detect và remediate — Block Public Access bật lại / rule 0.0.0.0/0 đã bị revoke.</sub>
-
-**CloudTrail event của lần gọi fix API:**
-
-![CloudTrail remediation event](./images/w6-cloudtrail-remediation.png)
-<sub>Note: CloudTrail event `PutPublicAccessBlock` / `RevokeSecurityGroupIngress` — thấy eventName, eventTime, userAgent (Lambda role ARN), và resource bị fix. Đây là bằng chứng remediation đã thực sự chạy.</sub>
-
----
-
-### 5.5 Supporting Preventive Control
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Chọn **một** path rồi xoá hai path còn lại để evidence pack gọn.
-> - Theo drift audit hiện tại, path dễ bám live AWS nhất có thể là **S3 Block Public Access account-level** hoặc **IAM Access Analyzer** nếu account đã bật; còn path **KMS CMK** cần chắc chắn có service thật dùng key và có CloudTrail `GenerateDataKey`/`Decrypt`.
-
-**Path đã chọn:** `[ ] Path A — KMS CMK` &nbsp;&nbsp; `[ ] Path B — S3 Block Public Access account-level` &nbsp;&nbsp; `[ ] Path C — IAM Access Analyzer`
-
----
-
-**Nếu Path A — KMS CMK:**
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **KMS** → **Customer managed keys** → chọn key alias của nhóm.
-> - `w6-kms-cmk.png`: chụp alias, key spec, rotation enabled.
-> - `w6-kms-applied.png`: chụp service đang dùng CMK, ví dụ RDS/EFS/S3.
-> - `w6-kms-cloudtrail.png`: CloudTrail filter `GenerateDataKey` hoặc `Decrypt`, rồi xác nhận caller service như `rds.amazonaws.com` hoặc `s3.amazonaws.com`.
-
-![KMS CMK created](./images/w6-kms-cmk.png)
-<sub>Note: Customer Managed Key `alias/hexacode-rds-prod` đã tạo, Symmetric, key rotation Enabled.</sub>
-
-![KMS applied to data store](./images/w6-kms-applied.png)
-<sub>Note: RDS / EFS / S3 đã được modify để dùng CMK (không phải aws/rds hay aws/s3 — AWS-managed key).</sub>
-
-![CloudTrail kms:GenerateDataKey](./images/w6-kms-cloudtrail.png)
-<sub>Note: CloudTrail event `kms:GenerateDataKey` từ `rds.amazonaws.com` / `s3.amazonaws.com` — xác nhận CMK đang được dùng active khi data được encrypt/decrypt.</sub>
-
----
-
-**Nếu Path B — S3 Block Public Access account-level:**
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **S3** → **Block Public Access settings for this account**.
-> - `w6-s3-bpa-account.png`: chụp cả 4 toggle ON.
-> - `w6-s3-deny-policy.png`: chụp bucket policy deny non-TLS hoặc deny unencrypted PutObject.
-> - `w6-s3-test-denied.png`: chụp lỗi/deny result của test call.
-
-![S3 BPA account level](./images/w6-s3-bpa-account.png)
-<sub>Note: S3 console → Block Public Access settings for this account → cả 4 setting đều ON.</sub>
-
-![S3 deny policy](./images/w6-s3-deny-policy.png)
-<sub>Note: Bucket policy deny PutObject non-TLS (`aws:SecureTransport=false`).</sub>
-
-![S3 test call denied](./images/w6-s3-test-denied.png)
-<sub>Note: Test call bị policy reject — xác nhận enforce đang hoạt động.</sub>
-
----
-
-**Nếu Path C — IAM Access Analyzer:**
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **IAM** → **Access Analyzer**.
-> - `w6-access-analyzer.png`: chụp analyzer enabled.
-> - `w6-access-analyzer-finding.png`: chụp ít nhất 1 external-access finding + decision triage.
-> - Nếu account chưa bật Access Analyzer, path này sẽ phát sinh thêm setup nên không phải đường ngắn nhất.
-
-![IAM Access Analyzer enabled](./images/w6-access-analyzer.png)
-<sub>Note: IAM Access Analyzer đã enable trong account.</sub>
-
-![External access finding](./images/w6-access-analyzer-finding.png)
-<sub>Note: ≥1 external-access finding được surface. Triage decision: finding này là gì, có phải intended không, production remediation là gì.</sub>
-
----
-
-### 5.6 Security Threat Statement
-
-> Temporary guide — xoá block này sau khi viết xong.
-> - Viết theo cấu trúc: `misconfiguration là gì -> data/asset nào bị ảnh hưởng -> attacker có thể làm gì`.
-> - Tránh viết chung chung kiểu “bị hack”; rubric muốn thấy blast radius cụ thể.
-
-**Guard fix misconfiguration gì:**
-`[e.g. "S3 bucket chứa Bedrock KB documents bị set public — mọi người trên internet có thể đọc toàn bộ nội dung knowledge base của app."]`
-
-**Blast radius nếu không remediate:**
-`[e.g. "Toàn bộ 36 markdown documents của GeekBrain — bao gồm incident postmortems, SLA targets, team structure — bị lộ công khai. Kẻ tấn công có thể dùng thông tin này để social engineer hoặc target specific vulnerabilities."]`
-
----
-
-### 5.7 Security-Cost Trade-off Statement
-
-> Temporary guide — xoá block này sau khi viết xong.
-> - Nêu **chi phí cụ thể** của control đã chọn, hoặc nói rõ là gần như zero-cost nếu chọn account-level BPA / deny policy.
-> - Sau đó giải thích vì sao chi phí đó đáng trả so với blast radius ở trên.
-
-`[1-2 câu nêu tên cost cụ thể và justification. Ví dụ: "KMS CMK tốn $1/tháng per key. Justified vì mỗi decrypt event được log kèm IAM principal — đây là audit trail bắt buộc khi data store chứa thông tin thi cử của người dùng. Cost $1/tháng nhỏ hơn nhiều so với rủi ro compliance khi không có audit trail."]`
-
----
-
-## Section 6 — Project Recap
-
-### Ứng dụng là gì
-
-`[Mô tả ngắn: HexaCode là một coding practice platform cho phép người dùng luyện tập bài tập lập trình, nộp bài, và nhận hỗ trợ từ AI chatbot.]`
-
-### Business Domain
-
-`[e.g. EdTech / Competitive Programming / Online Judge]`
-
-### Các quyết định kiến trúc và thiết kế chính từ W1-W5
-
-| Tuần | Quyết định chính |
-|---|---|
-| W1 | `[e.g. 3-tier architecture: CloudFront → API Gateway → ECS Fargate → RDS]` |
-| W2 | `[e.g. S3 cho static assets, IAM baseline với MFA trên root]` |
-| W3 | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]` |
-| W4 | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]` |
-| W5 | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
-| W6 | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]` |
-
-### W5 Feedback đã giải quyết *(tuỳ chọn)*
-
-`[e.g. "Trainer W5 feedback: MH5 scaling pattern chưa có visual evidence. W6 đã thêm CloudWatch Throttles metric screenshot cho Reserved Concurrency."]`
-
----
-
-## Bonus *(Tuỳ chọn)*
-
-**Screenshot Lambda function:**
-
-![Security Guard Lambda](./images/w6-sec-guard-lambda.png)
-<sub>Note: Lambda function đã deploy với least-privilege IAM role.</sub>
-
-**Lambda code snippet:**
-
-```python
-import boto3
-
-s3 = boto3.client('s3')
-
-def handler(event, context):
-    # Lấy bucket name từ CloudTrail event (nếu trigger từ EventBridge)
-    bucket_name = event.get('detail', {}).get('requestParameters', {}).get('bucketName')
-    
-    if not bucket_name:
-        # Fallback: scan tất cả bucket nếu trigger từ scheduled cron
-        buckets = s3.list_buckets()['Buckets']
-        for bucket in buckets:
-            check_and_fix_bucket(bucket['Name'])
-        return
-    
-    check_and_fix_bucket(bucket_name)
-
-def check_and_fix_bucket(bucket_name):
-    try:
-        status = s3.get_public_access_block(Bucket=bucket_name)
-        config = status['PublicAccessBlockConfiguration']
-        if not all(config.values()):
-            s3.put_public_access_block(
-                Bucket=bucket_name,
-                PublicAccessBlockConfiguration={
-                    'BlockPublicAcls': True,
-                    'IgnorePublicAcls': True,
-                    'BlockPublicPolicy': True,
-                    'RestrictPublicBuckets': True
-                }
-            )
-            print(f"Fixed public access on bucket: {bucket_name}")
-    except Exception as e:
-        print(f"Error checking bucket {bucket_name}: {e}")
-```
-
----
-
-### 5.2 IAM Role — Least Privilege
-
-![Security Guard IAM role](./images/w6-sec-guard-iam.png)
-<sub>Note: IAM execution role chỉ có `s3:PutPublicAccessBlock`, `s3:GetBucketPolicyStatus`, `s3:ListAllMyBuckets` — hoặc `ec2:RevokeSecurityGroupIngress`, `ec2:DescribeSecurityGroups`. Không có wildcard.</sub>
-
----
-
-### 5.3 EventBridge Trigger
-
-**Trigger type đã chọn:** `[ ] EventBridge rule trên CloudTrail event` &nbsp;&nbsp; `[ ] EventBridge Scheduler daily cron`
-
-![EventBridge trigger config](./images/w6-sec-guard-trigger.png)
-<sub>Note: EventBridge rule trên event source `aws.s3` / event `PutBucketPolicy` / `PutBucketAcl` — hoặc daily cron schedule. Rule đang Enabled.</sub>
-
----
-
-### 5.4 Demo Vòng Lặp Detect → Fix
-
-**Before — Vi phạm được tạo cố ý:**
-
-![Security violation before](./images/w6-sec-before.png)
-<sub>Note: S3 bucket bị set public (Block Public Access tắt) — hoặc Security Group có rule 0.0.0.0/0 port 22. Đây là trạng thái "insecure" trước khi Lambda chạy.</sub>
-
-**After — Lambda đã fix:**
-
-![Security violation after](./images/w6-sec-after.png)
-<sub>Note: Cùng bucket/SG sau khi Lambda detect và remediate — Block Public Access bật lại / rule 0.0.0.0/0 đã bị revoke.</sub>
-
-**CloudTrail event của lần gọi fix API:**
-
-![CloudTrail remediation event](./images/w6-cloudtrail-remediation.png)
-<sub>Note: CloudTrail event `PutPublicAccessBlock` / `RevokeSecurityGroupIngress` — thấy eventName, eventTime, userAgent (Lambda role ARN), và resource bị fix. Đây là bằng chứng remediation đã thực sự chạy.</sub>
-
----
-
-### 5.5 Supporting Preventive Control
-
-**Path đã chọn:** `[ ] Path A — KMS CMK` &nbsp;&nbsp; `[ ] Path B — S3 Block Public Access account-level` &nbsp;&nbsp; `[ ] Path C — IAM Access Analyzer`
-
----
-
-**Nếu Path A — KMS CMK:**
-
-![KMS CMK created](./images/w6-kms-cmk.png)
-<sub>Note: Customer Managed Key `alias/hexacode-rds-prod` đã tạo, Symmetric, key rotation Enabled.</sub>
-
-![KMS applied to data store](./images/w6-kms-applied.png)
-<sub>Note: RDS / EFS / S3 đã được modify để dùng CMK (không phải aws/rds hay aws/s3 — AWS-managed key).</sub>
-
-![CloudTrail kms:GenerateDataKey](./images/w6-kms-cloudtrail.png)
-<sub>Note: CloudTrail event `kms:GenerateDataKey` từ `rds.amazonaws.com` / `s3.amazonaws.com` — xác nhận CMK đang được dùng active khi data được encrypt/decrypt.</sub>
-
----
-
-**Nếu Path B — S3 Block Public Access account-level:**
-
-![S3 BPA account level](./images/w6-s3-bpa-account.png)
-<sub>Note: S3 console → Block Public Access settings for this account → cả 4 setting đều ON.</sub>
-
-![S3 deny policy](./images/w6-s3-deny-policy.png)
-<sub>Note: Bucket policy deny PutObject non-TLS (`aws:SecureTransport=false`).</sub>
-
-![S3 test call denied](./images/w6-s3-test-denied.png)
-<sub>Note: Test call bị policy reject — xác nhận enforce đang hoạt động.</sub>
-
----
-
-**Nếu Path C — IAM Access Analyzer:**
-
-![IAM Access Analyzer enabled](./images/w6-access-analyzer.png)
-<sub>Note: IAM Access Analyzer đã enable trong account.</sub>
-
-![External access finding](./images/w6-access-analyzer-finding.png)
-<sub>Note: ≥1 external-access finding được surface. Triage decision: finding này là gì, có phải intended không, production remediation là gì.</sub>
-
----
-
-### 5.6 Security Threat Statement
-
-**Guard fix misconfiguration gì:**
-`[e.g. "S3 bucket chứa Bedrock KB documents bị set public — mọi người trên internet có thể đọc toàn bộ nội dung knowledge base của app."]`
-
-**Blast radius nếu không remediate:**
-`[e.g. "Toàn bộ 36 markdown documents của GeekBrain — bao gồm incident postmortems, SLA targets, team structure — bị lộ công khai. Kẻ tấn công có thể dùng thông tin này để social engineer hoặc target specific vulnerabilities."]`
-
----
-
-### 5.7 Security-Cost Trade-off Statement
-
-`[1-2 câu nêu tên cost cụ thể và justification. Ví dụ: "KMS CMK tốn $1/tháng per key. Justified vì mỗi decrypt event được log kèm IAM principal — đây là audit trail bắt buộc khi data store chứa thông tin thi cử của người dùng. Cost $1/tháng nhỏ hơn nhiều so với rủi ro compliance khi không có audit trail."]`
-
----
-
-## Section 6 — Project Recap
-
-### Ứng dụng là gì
-
-`[Mô tả ngắn: HexaCode là một coding practice platform cho phép người dùng luyện tập bài tập lập trình, nộp bài, và nhận hỗ trợ từ AI chatbot.]`
-
-### Business Domain
-
-`[e.g. EdTech / Competitive Programming / Online Judge]`
-
-### Các quyết định kiến trúc và thiết kế chính từ W1-W5
-
-| Tuần | Quyết định chính |
-|---|---|
-| W1 | `[e.g. 3-tier architecture: CloudFront → API Gateway → ECS Fargate → RDS]` |
-| W2 | `[e.g. S3 cho static assets, IAM baseline với MFA trên root]` |
-| W3 | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]` |
-| W4 | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]` |
-| W5 | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
-| W6 | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]` |
-
-### W5 Feedback đã giải quyết *(tuỳ chọn)*
-
-`[e.g. "Trainer W5 feedback: MH5 scaling pattern chưa có visual evidence. W6 đã thêm CloudWatch Throttles metric screenshot cho Reserved Concurrency."]`
 
 ---
 
