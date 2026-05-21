@@ -26,7 +26,11 @@
 
 ![W5 backup selection fixed](./images/BackupPlan.png)
 
-<sub>Note: Backup selection đã được đưa về hướng explicit resource assignment thay vì narrative `assign-by-ARN-prefix`.</sub>
+<sub>Note: Hệ thống xác nhận các bản sao lưu đã được thực hiện thành công (Status: Completed) cho cả RDS và EFS với chu kỳ lưu trữ (Retention) là 35 ngày. Đồng thời, Backup Plan được gắn thẻ Project: hexacode và Environment: prod một cách nhất quán. Điều này giúp nhóm không chỉ đảm bảo an toàn dữ liệu mà còn kiểm soát chặt chẽ chi phí lưu trữ phát sinh từ các bản backup, phục vụ việc phân bổ ngân sách chính xác trong Cost Explorer.</sub>
+
+![Protected Resources](./images/ProtectedResources.png)
+
+<sub>Note: cấu hình AWS Backup để bao phủ toàn bộ các kho lưu trữ dữ liệu trọng yếu của ứng dụng bao gồm: S3 (Assets), RDS (Database) và EFS (Artifacts)</sub>
 
 #### 1.3 Provisioned concurrency đã có cấu hình live, nhưng phần diễn giải warm-start phải viết đúng
 
