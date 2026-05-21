@@ -9,7 +9,7 @@
 | Field                         | Details                                                                                             |
 | ----------------------------- | --------------------------------------------------------------------------------------------------- |
 | **Group Number**              | Group 6                                                                                             |
-| **Member Names**              | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Hoàng Thông · Thành Tâm |
+| **Member Names**              | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Đình Thông · Thành Tâm |
 | **Link Repo**                 | `[GitHub repo URL]`                                                                                 |
 | **W5 Evidence Pack**          | `[Link tới docs/W5_evidence.md commit]`                                                             |
 | **W5 Feedback đã giải quyết** | `[Tuỳ chọn — nhắc ngắn gọn nếu có]`                                                                 |
