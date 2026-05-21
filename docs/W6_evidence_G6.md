@@ -29,18 +29,21 @@
 | `Environment` | `production`                   |
 | `CostCenter`  | `G6`                           |
 | `ManagedBy`   | `terraform`                    |
+| `Keep`        | `true`                         |
 | `Name`        | `hexacode-prod-{related name}` |
 | `Application` | `{related which aws service}`  |
 
 ## **Screenshot tag trên EC2 / ECS:**
 
-## ![identity](../images/2.1_identity.png)
+<!-- ## ![identity](../images/2.1_identity.png)
 
 ## ![problem](../images/2.1_problem.png)
 
 ## ![submission](../images/2.1_submission.png)
 
-![worker](../images/2.1_worker.png)
+![worker](../images/2.1_worker.png) -->
+
+![ecs_identity](../images/2.1_ecs_identity.png)
 
 ## **Screenshot tag trên RDS:**
 
@@ -59,8 +62,9 @@
 
 ### 2.2 Cost Allocation Tags — Activated trong Billing Console
 
-![Cost allocation tags activated](./images/w6-cost-allocation-tags.png)
-<sub>Note: Tag `Owner` và `Application` đã được Activate trong AWS Billing console → Cost allocation tags. Đây là bước tách biệt khỏi việc tạo tag — bỏ qua bước này thì tag không xuất hiện như filter dimension trong Cost Explorer.</sub>
+![cost_allocatio_tags](../images/2.2_cost_allocatio_tags.png)
+
+<p> => tạm thời bị ***Access Denied*** </p>
 
 ---
 
@@ -68,25 +72,28 @@
 
 **Tool 1 — AWS Budgets:**
 
-![AWS Budgets config](./images/w6-budgets-config.png)
-<sub>Note: Budget $150/tuần được set trước Thứ Sáu. Alert gửi về email khi đạt 80% và 100% ngưỡng.</sub>
+![budget_alarm](../images/2.3_budget_alarm.png)
+
+<p>Note: Có set 2 rule cho alert đó là gồm >50% or >100% thì sẽ alarm</p>
 
 **Tool 2 — Cost Explorer filter theo tag:**
 
-![Cost Explorer filter](./images/w6-cost-explorer-filter.png)
-<sub>Note: Cost Explorer filter theo `Application=HexaCode` — thấy chi phí breakdown theo service chỉ của workload nhóm, không phải toàn account.</sub>
+# **NHỚ BỔ SUNGGGGGGGGG**
 
-**Tool 3 — Cost Anomaly Detection (nếu có):**
+**Tool 3 — Cost Anomaly Detection:**
 
-![Cost Anomaly Detection](./images/w6-anomaly-detection.png)
-<sub>Note: Monitor scope về `Application=HexaCode`. Alert subscription được xác nhận.</sub>
+![cost_anomaly_detection](../images/2.3_cost_anomaly_detection.png)
+<!-- <p>Note: </p> -->
+
+![finance](../images/2.3_finance.png)
+
 
 ---
 
 ### 2.4 Baseline Cost Breakdown (sau ít nhất 24h data)
 
 ![Baseline cost breakdown](./images/w6-baseline-cost.png)
-<sub>Note: Screenshot Cost Explorer sau 24h redeploy, filter theo tag `Application=HexaCode`.</sub>
+<p>Note: Screenshot Cost Explorer sau 24h redeploy, filter theo tag `Application=HexaCode`.</p>
 
 **Quan sát top 3 cost driver:**
 
@@ -166,9 +173,15 @@ def handler(event, context):
 
 ### 3.2 IAM Role — Least Privilege
 
-![Cost Guard IAM role](./images/w6-cost-guard-iam.png)
-<sub>Note: IAM execution role chỉ có các permission cần thiết — `ec2:StopInstances`, `ec2:DescribeInstances`, `rds:StopDBInstance`, `rds:DescribeDBInstances`, `rds:ListTagsForResource`. Không có `Action: "*"` hay `Resource: "*"`.</sub>
+![cost_guard_iam_role](../images/3.2_cost_guard_iam_role.png)
+Role này được attach vào:
 
+* Lambda automation
+    * detect abnormal ECS cost
+    * auto stop ECS tasks/services
+    * cleanup workload
+
+* Cho phép
 ---
 
 ### 3.3 EventBridge Daily Schedule
