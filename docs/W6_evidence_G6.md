@@ -49,6 +49,7 @@
 ## **Screenshot tag trên Lambda:**
 
 ![lambda](../images/2.1_lambda.png)
+![cors](../images/2.1_cors.png)
 
 ## **Screenshot tag trên S3:**
 
