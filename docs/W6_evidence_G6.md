@@ -158,30 +158,42 @@
 
 ---
 
-### 2.5 Tagging Strategy Document (1 trang)
+## Section 2.5 — Tagging Strategy Document
 
-**Tag keys được dùng:**
+### 1. Mục tiêu (Objective)
+Chiến lược gắn thẻ (Tagging Strategy) của dự án **HexaCode** được thiết kế để tối ưu hóa khả năng giám sát tài nguyên và phân bổ chi phí chi tiết. Thay vì sử dụng các nhãn chung, nhóm tập trung vào việc định danh chức năng cụ thể của từng dịch vụ, giúp quy trình vận hành và xử lý sự cố (Troubleshooting) diễn ra nhanh chóng.
 
-| Key | Giá trị được phép | Bắt buộc trên |
-|---|---|---|
-| `Owner` | `[email cụ thể]` | Mọi billable resource |
-| `Environment` | `dev` / `staging` / `prod` | Mọi billable resource |
-| `CostCenter` | `G6` | Mọi billable resource |
-| `Application` | `HexaCode` | Mọi billable resource |
+### 2. Danh mục Tag Schema áp dụng
 
-**Enforce compliance thế nào:**
+| Tag Key | Giá trị thực tế áp dụng | Quy tắc đặt giá trị | Phạm vi áp dụng |
+| :--- | :--- | :--- | :--- |
+| **Project** | `hexacode` | Tên dự án (Dùng làm bộ lọc chính trong Cost Explorer). | Toàn bộ tài nguyên |
+| **Application** | `RDS-postgres-main`, `Lambda-chat-service`, `S3-terraform-state` | Định danh theo cú pháp: [Service]-[Chức năng]-[Vị trí]. | Toàn bộ tài nguyên |
+| **Environment** | `production` | Xác định môi trường vận hành là Production. | Toàn bộ tài nguyên |
+| **Owner** | `hoang` | Tên thành viên chịu trách nhiệm quản lý chính. | Toàn bộ tài nguyên |
+| **CostCenter** | `G6` | Mã định danh Nhóm 6 để quản lý ngân sách. | Toàn bộ tài nguyên |
+| **ManagedBy** | `terraform` | Xác định nguồn gốc khởi tạo (IaC hoặc Manual). | Các tài nguyên deploy qua code |
 
-`[Mô tả cách nhóm đảm bảo tag nhất quán — ví dụ: dùng AWS Config rule `required-tags`, hoặc checklist deploy thủ công, hoặc tag policy trong AWS Organizations.]`
+### 3. Quy tắc định danh Application (Granularity)
+Nhóm áp dụng mô hình định danh chi tiết cho tag `Application` nhằm hỗ trợ việc phân tách hóa đơn (Cost Breakdown) đến từng dịch vụ đơn lẻ:
+*   **Dịch vụ Compute:** Phân loại theo chức năng logic (Ví dụ: `Lambda-chat-service`).
+*   **Dịch vụ Database:** Phân loại theo Engine và vai trò (Ví dụ: `RDS-postgres-main`).
+*   **Dịch vụ Storage:** Phân loại theo mục đích sử dụng (Ví dụ: `S3-terraform-state`).
 
-**Giá trị không được phép:**
+### 4. Chiến lược truy vết chi phí (Cost Attribution)
+Trong AWS Billing & Cost Explorer, nhóm sử dụng cơ chế lọc hai tầng:
+1.  **Tầng dự án:** Sử dụng tag **`Project: hexacode`** để xem tổng quan chi phí của cả nhóm so với hạn mức $150.
+2.  **Tầng dịch vụ:** Sử dụng tag **`Application`** để xác định thành phần nào trong hệ thống đang tiêu tốn ngân sách nhiều nhất, từ đó đưa ra quyết định tối ưu hóa (Right-sizing).
 
-- `Owner`: không dùng "N/A", "unknown", hoặc bỏ trống
-- `Environment`: không dùng "Dev", "DEV", "development" — chỉ dùng "dev"
-- `Application`: không dùng "hexacode", "HEXACODE" — chỉ dùng "HexaCode"
+### 5. Cơ chế đảm bảo tuân thủ (Compliance)
+*   **Infrastructure as Code (IaC):** Sử dụng Terraform để tự động gán các nhãn `ManagedBy`, `Project` và `CostCenter` ngay khi tạo mới, đảm bảo tính nhất quán và tránh sai sót do con người.
+*   **Kiểm soát vận hành:** Tag `Owner: hoang` giúp định danh người chịu trách nhiệm khi hệ thống có cảnh báo từ CloudWatch Alarms hoặc khi Cost Anomaly Detection phát hiện chi tiêu bất thường.
+*   **Rà soát định kỳ:** Nhóm sử dụng công cụ **Tag Editor** trong AWS Console để kiểm tra hàng tuần, đảm bảo không có tài nguyên nào bị bỏ sót (Untagged resources).
 
-**Trong account thật (production):**
-
-`[1-2 câu về cách enforce trong production — ví dụ: Service Control Policy deny CreateInstance nếu thiếu tag bắt buộc, hoặc AWS Config alert khi resource không có tag.]`
+### 6. Các giá trị không được phép (Forbidden Values)
+*   **Project:** Không sử dụng các giá trị chung như `test`, `aws`, hoặc bỏ trống.
+*   **Owner:** Không dùng tên chung của nhóm (G6), phải dùng tên cá nhân chịu trách nhiệm.
+*   **Environment:** Tuyệt đối không để trống, giá trị mặc định phải là `production` cho stack chính của dự án.
 
 ---
 
