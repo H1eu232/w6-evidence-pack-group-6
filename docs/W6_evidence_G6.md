@@ -9,143 +9,95 @@
 |---|---|
 | **Group Number** | Group 6 |
 | **Member Names** | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Đình Thông · Thành Tâm |
-| **Link Repo** | `[GitHub repo URL]` |
-| **W5 Evidence Pack** | `[Link tới docs/W5_evidence.md commit]` |
+| **Link Repo** | `[[GitHub repo URL]](https://github.com/H1eu232/w6-evidence-pack-group-6.git)` |
+| **W5 Evidence Pack** | `[[Link tới docs/W5_evidence.md commit]](https://github.com/H1eu232/w6-evidence-pack-group-6/edit/main/docs/W6_evidence_G6.md)` |
 
 ### W5 Feedback đã giải quyết
 
-> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
-> - Mục này chỉ nên giữ các feedback đã có evidence trực quan từ AWS Console hoặc source-of-truth đủ mạnh.
-> - Các feedback chưa đóng hoàn toàn vẫn để ở `docs/envidence_drift.md`, không claim ở đây.
+![W5 feedback](./images/W5fb.png)
 
 #### 1.1 API Gateway throttling không còn giữ mức 1 RPS
 
-> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
-> - AWS Console → **API Gateway** → **APIs** → HTTP API `5l48bwt6ck` → **Stages** → chọn stage đang deploy.
-> - Chụp phần **Default route settings** để thấy throttling không còn là `1 request/giây`; theo source-of-truth hiện tại là `burst 200 / rate 100`.
-> - Sau đó vào **Routes** → `POST /api/chat/messages` để chụp limit riêng cho chat route; theo source-of-truth hiện tại là `burst 20 / rate 10`.
-> - Nếu console đang hiển thị khác hẳn, không dùng ảnh này để claim đã sửa hoàn toàn; đưa lại item vào `envidence_drift.md`.
+![W5 throttling fixed](./images/APIThrottling.png)
 
-![W5 throttling fixed](./images/w5-feedback-throttling.png)
 <sub>Note: Live API Gateway throttling đã rời khỏi narrative cũ `1 request/giây`; có default throttling cho stage và route-level throttling riêng cho `POST /api/chat/messages`.</sub>
 
 #### 1.2 Backup selection không còn mô tả kiểu assign-by-prefix
 
-> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
-> - AWS Console → **AWS Backup** → **Backup plans** → mở plan `hexacode-prod-daily-backups` hoặc plan tương ứng → **Resource assignments** / **Protected resources**.
-> - Chụp sao cho thấy resource assignment hiện tại gắn vào các resource thật, không chỉ mô tả prefix mơ hồ trong narrative.
-> - Nếu console chỉ hiện 2 resource hoặc không nhìn rõ danh sách resource thật, **không claim** feedback này đã đóng hoàn toàn; giữ nó trong `envidence_drift.md`.
-> - Nếu cần ảnh source-of-truth ở code để bổ trợ, chụp thêm `terraform/main.tf` + `terraform/modules/backup/main.tf`, nhưng ưu tiên AWS Console trước.
+![W5 backup selection fixed](./images/BackupPlan.png)
 
-![W5 backup selection fixed](./images/w5-feedback-backup-selection.png)
-<sub>Note: Backup selection đã được đưa về hướng explicit resource assignment thay vì narrative `assign-by-ARN-prefix`. Chỉ dùng ảnh này để claim closure khi console thể hiện đủ resource thật theo yêu cầu mentor.</sub>
+<sub>Note: Backup selection đã được đưa về hướng explicit resource assignment thay vì narrative `assign-by-ARN-prefix`.</sub>
 
 #### 1.3 Provisioned concurrency đã có cấu hình live, nhưng phần diễn giải warm-start phải viết đúng
 
-> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
-> - AWS Console → **Lambda** → function chat của app → **Configuration** → **Concurrency**.
-> - Chụp phần **Reserved concurrency** và **Provisioned concurrency** để chứng minh hạ tầng đã có cấu hình, thay vì chỉ nói suông trong W5.
-> - Ảnh này chỉ chứng minh **cấu hình tồn tại**; phần giải thích warm-start vẫn phải dựa trên log/init-duration đúng ngữ cảnh nếu muốn claim đã đóng hoàn toàn.
-> - Vì vậy, nếu chỉ mới có ảnh config mà chưa có diễn giải/log tốt hơn, vẫn giữ item narrative này ở `envidence_drift.md`.
+![W5 provisioned concurrency config](./images/Provisioned.png)
 
-![W5 provisioned concurrency config](./images/w5-feedback-provisioned-concurrency.png)
 <sub>Note: Chat Lambda đã có reserved/provisioned concurrency config trên live AWS. Đây là evidence tốt hơn cho hạ tầng, nhưng chưa tự động thay thế cho một warm-start explanation đúng.</sub>
 
 ---
 
 ## Section 2 — MH-COST-V — Cost Visibility & Attribution
 
-> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
-> - Phần mở đầu này dùng để chứng minh nhóm đã tiếp thu feedback W5 và sửa source-of-truth/operational posture trước khi sang W6.
-> - Nếu mentor hỏi sâu, ưu tiên nói rõ điểm nào đã có **live AWS confirmation** và điểm nào mới dừng ở **Terraform/doc correction**.
-> - Các mục chưa đóng hẳn đã được tách sang `docs/envidence_drift.md` để xử lý tiếp, không claim quá mức trong evidence pack chính.
-
 ### 2.1 Tagging — Bốn tag key bắt buộc trên mọi billable resource
-
-**Tag schema áp dụng:**
-
-| Tag Key | Giá trị | Quy tắc |
-|---|---|---|
-| `Owner` | `[email@domain.com]` | Nhất quán chữ hoa/thường |
-| `Environment` | `dev` | Không trộn "dev" và "Dev" |
-| `CostCenter` | `G6` | Group ID |
-| `Application` | `HexaCode` | Nhất quán — không đổi case |
-
-> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
-> - `w6-tags-ec2.png`: AWS Console → **EC2** → **Instances** → chọn instance app đã redeploy → tab **Tags**. Chụp sao cho thấy **Name** + đủ 4 key `Owner`, `Environment`, `CostCenter`, `Application`.
-> - `w6-tags-rds.png`: AWS Console → **RDS** → **Databases** → chọn DB instance dùng cho app → tab **Tags**. Chụp rõ tên DB và đủ 4 tag.
-> - `w6-tags-lambda.png`: AWS Console → **Lambda** → chọn function của app hoặc function W6 bạn tự tạo → tab **Configuration** / **Tags**. Theo drift audit, `CostGuardLambda` hiện đang **chưa có tag**, nên nếu dùng function này cho MH-COST-V thì phải tag lại trước khi chụp.
-> - `w6-tags-s3.png`: AWS Console → **S3** → chọn bucket của app → tab **Properties** → **Tags**. Nếu bucket đang chỉ có tag cũ như `Project` mà chưa có `Application`, ảnh này chưa đạt rubric.
-> - Lưu ý theo `docs/aws-console-drift-audit.md`: tag live hiện còn **không nhất quán** (`Environment` có cả `prod` và `production`), nên nên chuẩn hoá xong rồi mới chụp bộ ảnh Section 2.
 
 **Screenshot tag trên EC2 / ECS:**
 
-![Tags on EC2/ECS](./images/w6-tags-ec2.png)
+![Tags on EC2/ECS](./images/EC2Tag.png)
+
 <sub>Note: Cả 4 tag key hiển thị trên instance đã redeploy.</sub>
 
 **Screenshot tag trên RDS:**
 
-![Tags on RDS](./images/w6-tags-rds.png)
+![Tags on RDS](./images/RDSTag.png)
+
 <sub>Note: Cả 4 tag key hiển thị trên RDS hexacode-prod-db.</sub>
 
 **Screenshot tag trên Lambda:**
 
-![Tags on Lambda](./images/w6-tags-lambda.png)
+![Tags on Lambda](./images/LambdaTag.png)
+
 <sub>Note: Cả 4 tag key hiển thị trên Lambda functions đã redeploy.</sub>
 
 **Screenshot tag trên S3:**
 
-![Tags on S3](./images/w6-tags-s3.png)
+![Tags on S3](./images/S3Tag.png)
+
 <sub>Note: Cả 4 tag key hiển thị trên S3 buckets của app.</sub>
 
 ---
 
 ### 2.2 Cost Allocation Tags — Activated trong Billing Console
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **Billing and Cost Management** → **Cost allocation tags**.
-> - Tìm các key `Owner` và `Application`, filter theo status nếu cần, rồi **Activate**.
-> - Chụp màn hình khi thấy cột status là **Active** cho đúng 2 key này.
-> - Theo drift audit, phiên read-only CLI **không verify được** bước này vì `ce list-cost-allocation-tags` bị `AccessDenied`, nên đây là mục bắt buộc phải xác nhận trực tiếp trong Billing Console chứ không suy ra từ tag trên resource.
-
-![Cost allocation tags activated](./images/w6-cost-allocation-tags.png)
-<sub>Note: Tag `Owner` và `Application` đã được Activate trong AWS Billing console → Cost allocation tags. Đây là bước tách biệt khỏi việc tạo tag — bỏ qua bước này thì tag không xuất hiện như filter dimension trong Cost Explorer.</sub>
-
 ---
 
 ### 2.3 Cost Monitoring Tool(s) đã cấu hình
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - `w6-budgets-config.png`: AWS Console → **Billing** → **Budgets** → mở budget `prod`. Với evidence pack workshop, giữ narrative theo yêu cầu bài là **$150/tuần**; ảnh nên ưu tiên thể hiện ngưỡng, alert, và wiring hơn là tranh luận về period wording trong template.
-> - `w6-cost-explorer-filter.png`: AWS Console → **Cost Explorer** → filter theo tag dimension của workload. Chỉ chụp khi `Application=HexaCode` đã xuất hiện làm filter; nếu chưa thấy, quay lại mục Cost allocation tags.
-> - `w6-anomaly-detection.png`: AWS Console → **Cost Anomaly Detection** → monitor `Monitor-Hexacode`. Theo audit, monitor live đang là **SERVICE monitor**, threshold `$75`, subscription hằng ngày tới `nahoangit@gmail.com`.
-
 **Tool 1 — AWS Budgets:**
 
-![AWS Budgets config](./images/w6-budgets-config.png)
+![AWS Budgets config](./images/ProdBudget.png)
+
 <sub>Note: Budget $150/tuần được set trước Thứ Sáu. Alert gửi về email/SNS khi đạt các ngưỡng cấu hình. Với evidence pack workshop, giữ wording này nhất quán với narrative của bài.</sub>
 
 **Tool 2 — Cost Explorer filter theo tag:**
 
-![Cost Explorer filter](./images/w6-cost-explorer-filter.png)
+![Cost Explorer filter](./images/CostExplorer.png)
+
+![Cost Explorer filter](./images/CostExplorer2.png)
+
 <sub>Note: Cost Explorer filter theo `Application=HexaCode` — thấy chi phí breakdown theo service chỉ của workload nhóm, không phải toàn account.</sub>
 
 **Tool 3 — Cost Anomaly Detection (nếu có):**
 
-![Cost Anomaly Detection](./images/w6-anomaly-detection.png)
+![Cost Anomaly Detection](./images/CostAnomalyDetection.png)
+
 <sub>Note: Monitor scope về `Application=HexaCode`. Alert subscription được xác nhận.</sub>
 
 ---
 
 ### 2.4 Baseline Cost Breakdown (sau ít nhất 24h data)
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **Cost Explorer** → chọn khoảng thời gian có ít nhất 24h dữ liệu sau redeploy.
-> - Group by **Service** và filter theo tag workload của nhóm.
-> - Ảnh nên hiển thị rõ phần breakdown để viết được đoạn “top 3 cost drivers”.
-> - Theo drift audit, một số cost driver có khả năng nổi bật nếu chúng đang chạy thật: **RDS**, **Network Firewall / NAT-related surface**, **ECS/Fargate**, **CloudFront**, hoặc **Bedrock/OpenSearch**. Đừng điền ví dụ cứng nếu số thật trên Cost Explorer khác.
-
 ![Baseline cost breakdown](./images/w6-baseline-cost.png)
+
 <sub>Note: Screenshot Cost Explorer sau 24h redeploy, filter theo tag `Application=HexaCode`.</sub>
 
 > Temporary guide for paragraph — xoá sau khi viết observation thật.
@@ -201,16 +153,10 @@ Trong AWS Billing & Cost Explorer, nhóm sử dụng cơ chế lọc hai tầng:
 
 ### 3.1 Automated Cost Guard Lambda
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **Lambda** → tìm function `CostGuardLambda`.
-> - Chụp phần **Overview** hoặc **Configuration** sao cho thấy function name, runtime, và **Last modified**. Theo drift audit, live function này đang active và last modified là `2026-05-21T09:25:59Z`.
-> - Nếu nhóm đã tự sửa/clone function khác để đáp ứng rubric tốt hơn, hãy chụp function thực sự dùng cho demo thay vì mặc định bám `CostGuardLambda`.
-
-**Mô tả:** Lambda function scan mọi EC2/RDS không được tag `keep=true` (hoặc `Environment=dev`) và stop chúng.
-
 **Screenshot Lambda function:**
 
-![Cost Guard Lambda](./images/w6-cost-guard-lambda.png)
+![Cost Guard Lambda](./images/CostGuard.png)
+
 <sub>Note: Lambda function đã deploy, runtime Python, last modified timestamp.</sub>
 
 **Lambda code snippet:**
@@ -376,71 +322,65 @@ def stop_unprotected_services():
 
 ### 3.2 IAM Role — Least Privilege
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Từ Lambda `CostGuardLambda` → tab **Configuration** → **Permissions** → click execution role.
-> - Chụp 1 ảnh thể hiện trust relationship tới Lambda nếu cần, và 1 ảnh policy permissions gắn vào role.
-> - Theo W6 spec, giảng viên cần thấy least-privilege reasoning; nếu policy đang rộng quá, ảnh này sẽ tự lộ điểm yếu.
+![Cost Guard IAM role](./images/IAMRole.png)
 
-![Cost Guard IAM role](./images/w6-cost-guard-iam.png)
 <sub>Note: IAM execution role chỉ có các permission cần thiết — `ec2:StopInstances`, `ec2:DescribeInstances`, `rds:StopDBInstance`, `rds:DescribeDBInstances`, `rds:ListTagsForResource`. Không có `Action: "*"` hay `Resource: "*"`.</sub>
 
 ### 3.3 EventBridge Daily Schedule
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **EventBridge Scheduler** → mở schedule `daily-cost-guard`.
-> - Theo drift audit, live schedule hiện là `cron(0 9 * * ? *)`, timezone `Asia/Ho_Chi_Minh`, target `CostGuardLambda`, trạng thái **Enabled**.
-> - Chụp màn hình có đủ: schedule name, cron expression, timezone, target ARN/function.
+![EventBridge schedule](./images/EventBridgeDaily.png)
 
-![EventBridge schedule](./images/w6-eventbridge-schedule.png)
 <sub>Note: EventBridge Scheduler cron chạy daily invoke Cost Guard Lambda. Ảnh nên phản ánh đúng cron expression và timezone đang có trên live AWS.</sub>
 
 ---
 
 ### 3.4 Demonstrated Stop — Before/After + CloudTrail
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Mục này chỉ đạt khi là **một resource thật** bị stop bởi Lambda.
-> - Before/After: vào **EC2 → Instances** hoặc **RDS → Databases** rồi chụp cùng một resource ở trạng thái trước và sau.
-> - CloudTrail: AWS Console → **CloudTrail** → **Event history** → filter `Event name = StopInstances` hoặc `StopDBInstance`.
-> - Chụp sao cho thấy `eventTime`, `eventName`, resource ID, và identity/userAgent liên quan tới Lambda execution path.
-> - Nếu chỉ có budget/SNS wiring mà chưa có ảnh resource bị stop thật thì MH-COST-A vẫn thiếu bằng chứng.
+**Service before stop note:**
 
-![Instance before stop](./images/w6-instance-before-stop.png)
+![Service before stop](./images/ServiceBefore.png)
+
 <sub>Note: EC2 instance (hoặc RDS) đang ở trạng thái Running trước khi Lambda chạy.</sub>
 
-**After — Instance đã Stopped:**
+**Service after stop note:**
 
-![Instance after stop](./images/w6-instance-after-stop.png)
+![Instance after stop](./images/ServiceAfter.png)
+
 <sub>Note: Cùng instance đã chuyển sang Stopped sau khi Cost Guard Lambda được invoke.</sub>
 
-**CloudTrail event `StopInstances` / `StopDBInstance`:**
+**CloudTrail stop event:**
 
-![CloudTrail stop event](./images/w6-cloudtrail-stop.png)
+![CloudTrail stop event](./images/CloudTrailLog.png)
+
 <sub>Note: CloudTrail event xác nhận Lambda đã gọi StopInstances/StopDBInstance — thấy eventName, eventTime, userAgent (Lambda role ARN), và instanceId bị stop.</sub>
 
 ---
 
 ### 3.5 Budgets daily $150 → SNS → Lambda (Wire + Demo)
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **Billing** → **Budgets** → budget `prod` để chụp threshold/action notifications.
-> - AWS Console → **SNS** → topic `cost-guard-budget-alerts` để chụp subscriptions/delivery path.
-> - Nếu có thể, thêm ảnh Lambda trigger/subscription để nối mạch `Budget → SNS → Lambda`.
-> - Theo drift audit, live AWS **không thấy native Budget Actions**, chỉ xác nhận budget-to-SNS-to-Lambda path. Vì vậy caption nên nói đúng là **SNS wiring**, đừng claim Budget Action nếu console chưa có.
+![Budgets daily](./images/ProdBudget.png)
 
-![Budgets SNS wiring](./images/w6-budgets-sns.png)
+<sub>Note: AWS Budgets daily budget → SNS topic được wire. Khi budget vượt ngưỡng, SNS publish message → Lambda được invoke.</sub>
+
+![Budgets SNS](./images/SNS.png)
+
+<sub>Note: AWS Budgets daily budget → SNS topic được wire. Khi budget vượt ngưỡng, SNS publish message → Lambda được invoke.</sub>
+
+![Budgets SNS wiring](./images/CostGuard.png)
+
 <sub>Note: AWS Budgets daily budget → SNS topic được wire. Khi budget vượt ngưỡng, SNS publish message → Lambda được invoke.</sub>
 
 **Test SNS publish — demonstrate chain:**
 
 ```bash
 aws sns publish \
-  --topic-arn arn:aws:sns:us-west-2:ACCOUNT_ID:cost-guard-topic \
+  --topic-arn arn:aws:sns:us-west-2:583909632851:cost-guard-topic \
   --message '{"AlarmName":"BudgetAlert","NewStateValue":"ALARM"}' \
   --region us-west-2
 ```
 
-![SNS test publish](./images/w6-sns-test-publish.png)
+![SNS test publish](./imagesTestSNSPublish.png)
+
 <sub>Note: Manual SNS publish trigger Lambda → Lambda stop một resource → xác nhận chain hoạt động end-to-end mà không cần chờ cost data thật.</sub>
 
 ---
