@@ -217,30 +217,159 @@ Trong AWS Billing & Cost Explorer, nhóm sử dụng cơ chế lọc hai tầng:
 
 ```python
 import boto3
+import json
+from datetime import datetime
 
-ec2 = boto3.client('ec2')
-rds = boto3.client('rds')
+def lambda_handler(event, context):
+    print(f"📨 Received event: {json.dumps(event, indent=2)}")
+    
+    # Check if this is SNS event
+    if 'Records' in event and event['Records'][0].get('EventSource') == 'aws:sns':
+        return handle_sns_event(event)
+    else:
+        # Direct invoke
+        return handle_direct_invoke(event)
 
-def handler(event, context):
-    # Stop EC2 instances không có tag keep=true
-    instances = ec2.describe_instances(
-        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
-    )
-    for reservation in instances['Reservations']:
-        for instance in reservation['Instances']:
-            tags = {t['Key']: t['Value'] for t in instance.get('Tags', [])}
-            if tags.get('keep') != 'true':
-                ec2.stop_instances(InstanceIds=[instance['InstanceId']])
-                print(f"Stopped EC2: {instance['InstanceId']}")
+def handle_sns_event(event):
+    """Handle SNS notification from AWS Budgets"""
+    try:
+        sns_message = event['Records'][0]['Sns']['Message']
+        print(f"📊 Budget Alert: {sns_message}")
+        
+        # Parse budget message
+        try:
+            budget_data = json.loads(sns_message)
+            budget_name = budget_data.get('BudgetName', 'Unknown')
+            amount = budget_data.get('ActualAmount', 'Unknown')
+        except:
+            budget_name = "Daily Budget"
+            amount = "Over $150"
+        
+        print(f"🚨 BUDGET ALERT: {budget_name} - {amount}")
+        
+        # Trigger cost optimization
+        result = stop_unprotected_services()
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': f'Budget alert processed: {budget_name}',
+                'cost_optimization': result
+            })
+        }
+        
+    except Exception as e:
+        print(f"❌ Error processing SNS event: {str(e)}")
+        return {'statusCode': 500, 'error': str(e)}
 
-    # Stop RDS instances không có tag keep=true
-    dbs = rds.describe_db_instances()
-    for db in dbs['DBInstances']:
-        tags_resp = rds.list_tags_for_resource(ResourceName=db['DBInstanceArn'])
-        tags = {t['Key']: t['Value'] for t in tags_resp['TagList']}
-        if tags.get('keep') != 'true' and db['DBInstanceStatus'] == 'available':
-            rds.stop_db_instance(DBInstanceIdentifier=db['DBInstanceIdentifier'])
-            print(f"Stopped RDS: {db['DBInstanceIdentifier']}")
+def handle_direct_invoke(event):
+    """Handle direct invoke"""
+    return stop_unprotected_services()
+
+def stop_unprotected_services():
+    """Tắt services KHÔNG CÓ tag Keep = true"""
+    try:
+        ecs = boto3.client('ecs', region_name='us-west-2')
+        
+        # List all services trong cluster
+        services_response = ecs.list_services(cluster='hexacode-prod')
+        service_arns = services_response.get('serviceArns', [])
+        
+        stopped_services = []
+        protected_services = []
+        errors = []
+        
+        for service_arn in service_arns:
+            try:
+                # Extract service name từ ARN
+                service_name = service_arn.split('/')[-1]
+                
+                print(f"🔍 Checking service: {service_name}")
+                
+                # Get tags cho service
+                tags_response = ecs.list_tags_for_resource(resourceArn=service_arn)
+                tags = tags_response.get('tags', [])
+                
+                # Check for Keep = true tag (PROTECTION)
+                is_protected = False
+                for tag in tags:
+                    if tag['key'].lower() == 'keep' and tag['value'].lower() == 'true':
+                        is_protected = True
+                        print(f"🛡️ Service {service_name} có tag Keep=true - ĐƯỢC BẢO VỆ")
+                        break
+                
+                if is_protected:
+                    # Service được bảo vệ, không tắt
+                    protected_services.append(service_name)
+                else:
+                    # Service KHÔNG có tag Keep=true → TẮT
+                    print(f"🎯 Service {service_name} KHÔNG có tag Keep=true - SẼ BỊ TẮT")
+                    
+                    # Get current service details
+                    service_details = ecs.describe_services(
+                        cluster='hexacode-prod',
+                        services=[service_name]
+                    )
+                    
+                    current_count = service_details['services'][0]['desiredCount']
+                    
+                    if current_count > 0:
+                        # Scale service to 0
+                        response = ecs.update_service(
+                            cluster='hexacode-prod',
+                            service=service_name,
+                            desiredCount=0
+                        )
+                        stopped_services.append({
+                            'service': service_name,
+                            'previous_count': current_count,
+                            'new_count': 0,
+                            'reason': 'no_keep_tag'
+                        })
+                        print(f"🛑 STOPPED service: {service_name} (was running {current_count} tasks)")
+                    else:
+                        print(f"ℹ️ Service {service_name} already stopped")
+                        stopped_services.append({
+                            'service': service_name,
+                            'previous_count': 0,
+                            'new_count': 0,
+                            'note': 'already_stopped'
+                        })
+                    
+            except Exception as e:
+                error_msg = f"❌ ERROR processing {service_name}: {str(e)}"
+                errors.append(error_msg)
+                print(error_msg)
+        
+        result = {
+            'timestamp': datetime.now().isoformat(),
+            'stopped_services': stopped_services,
+            'protected_services': protected_services,
+            'errors': errors,
+            'summary': {
+                'stopped_count': len(stopped_services),
+                'protected_count': len(protected_services),
+                'error_count': len(errors)
+            }
+        }
+        
+        print(f"📊 SUMMARY:")
+        print(f"   🛑 Stopped: {len(stopped_services)} services (no Keep=true tag)")
+        print(f"   🛡️ Protected: {len(protected_services)} services (has Keep=true tag)")
+        print(f"   ❌ Errors: {len(errors)}")
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps(result, indent=2)
+        }
+        
+    except Exception as e:
+        error_msg = f"❌ Error in cost optimization: {str(e)}"
+        print(error_msg)
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': error_msg})
+        }
 ```
 
 ---
