@@ -1,17 +1,18 @@
 # Evidence Pack — W6: Operations Hardening & Cost-Aware Cloud
+
 # Group 6 — HexaCode
 
 ---
 
 ## Section 1 — Cover
 
-| Field | Details |
-|---|---|
-| **Group Number** | Group 6 |
-| **Member Names** | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Hoàng Thông · Thành Tâm |
-| **Link Repo** | `[GitHub repo URL]` |
-| **W5 Evidence Pack** | `[Link tới docs/W5_evidence.md commit]` |
-| **W5 Feedback đã giải quyết** | `[Tuỳ chọn — nhắc ngắn gọn nếu có]` |
+| Field                         | Details                                                                                             |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Group Number**              | Group 6                                                                                             |
+| **Member Names**              | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Hoàng Thông · Thành Tâm |
+| **Link Repo**                 | `[GitHub repo URL]`                                                                                 |
+| **W5 Evidence Pack**          | `[Link tới docs/W5_evidence.md commit]`                                                             |
+| **W5 Feedback đã giải quyết** | `[Tuỳ chọn — nhắc ngắn gọn nếu có]`                                                                 |
 
 ---
 
@@ -21,32 +22,37 @@
 
 **Tag schema áp dụng:**
 
-| Tag Key | Giá trị | Quy tắc |
-|---|---|---|
-| `Owner` | `[email@domain.com]` | Nhất quán chữ hoa/thường |
-| `Environment` | `dev` | Không trộn "dev" và "Dev" |
-| `CostCenter` | `G6` | Group ID |
-| `Application` | `HexaCode` | Nhất quán — không đổi case |
+| Tag Key       | Giá trị                        |
+| ------------- | ------------------------------ |
+| `Owner`       | `hoang`                        |
+| `Project`     | `hexacode`                     |
+| `Environment` | `production`                   |
+| `CostCenter`  | `G6`                           |
+| `ManagedBy`   | `terraform`                    |
+| `Name`        | `hexacode-prod-{related name}` |
+| `Application` | `{related which aws service}`  |
 
-**Screenshot tag trên EC2 / ECS:**
+## **Screenshot tag trên EC2 / ECS:**
 
-![Tags on EC2/ECS](./images/w6-tags-ec2.png)
-<sub>Note: Cả 4 tag key hiển thị trên instance đã redeploy.</sub>
+## ![identity](../images/2.1_identity.png)
 
-**Screenshot tag trên RDS:**
+## ![problem](../images/2.1_problem.png)
 
-![Tags on RDS](./images/w6-tags-rds.png)
-<sub>Note: Cả 4 tag key hiển thị trên RDS hexacode-prod-db.</sub>
+## ![submission](../images/2.1_submission.png)
 
-**Screenshot tag trên Lambda:**
+![worker](../images/2.1_worker.png)
 
-![Tags on Lambda](./images/w6-tags-lambda.png)
-<sub>Note: Cả 4 tag key hiển thị trên Lambda functions đã redeploy.</sub>
+## **Screenshot tag trên RDS:**
 
-**Screenshot tag trên S3:**
+![rds](../images/2.1_rds.png)
 
-![Tags on S3](./images/w6-tags-s3.png)
-<sub>Note: Cả 4 tag key hiển thị trên S3 buckets của app.</sub>
+## **Screenshot tag trên Lambda:**
+
+![lambda](../images/2.1_lambda.png)
+
+## **Screenshot tag trên S3:**
+
+![s3vector](../images/2.1_s3vector.png)
 
 ---
 
@@ -91,12 +97,12 @@
 
 **Tag keys được dùng:**
 
-| Key | Giá trị được phép | Bắt buộc trên |
-|---|---|---|
-| `Owner` | `[email cụ thể]` | Mọi billable resource |
+| Key           | Giá trị được phép          | Bắt buộc trên         |
+| ------------- | -------------------------- | --------------------- |
+| `Owner`       | `[email cụ thể]`           | Mọi billable resource |
 | `Environment` | `dev` / `staging` / `prod` | Mọi billable resource |
-| `CostCenter` | `G6` | Mọi billable resource |
-| `Application` | `HexaCode` | Mọi billable resource |
+| `CostCenter`  | `G6`                       | Mọi billable resource |
+| `Application` | `HexaCode`                 | Mọi billable resource |
 
 **Enforce compliance thế nào:**
 
@@ -244,11 +250,11 @@ cloudwatch = boto3.client('cloudwatch')
 
 def handler(event, context):
     start = time.time()
-    
+
     # [Business logic của app ở đây — gọi Bedrock, query DB, v.v.]
-    
+
     latency_ms = (time.time() - start) * 1000
-    
+
     cloudwatch.put_metric_data(
         Namespace='HexaCode/Operations',
         MetricData=[{
@@ -322,14 +328,14 @@ s3 = boto3.client('s3')
 def handler(event, context):
     # Lấy bucket name từ CloudTrail event (nếu trigger từ EventBridge)
     bucket_name = event.get('detail', {}).get('requestParameters', {}).get('bucketName')
-    
+
     if not bucket_name:
         # Fallback: scan tất cả bucket nếu trigger từ scheduled cron
         buckets = s3.list_buckets()['Buckets']
         for bucket in buckets:
             check_and_fix_bucket(bucket['Name'])
         return
-    
+
     check_and_fix_bucket(bucket_name)
 
 def check_and_fix_bucket(bucket_name):
@@ -458,22 +464,22 @@ def check_and_fix_bucket(bucket_name):
 
 ### Các quyết định kiến trúc và thiết kế chính từ W1-W5
 
-| Tuần | Quyết định chính |
-|---|---|
-| W1 | `[e.g. 3-tier architecture: CloudFront → API Gateway → ECS Fargate → RDS]` |
-| W2 | `[e.g. S3 cho static assets, IAM baseline với MFA trên root]` |
-| W3 | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]` |
-| W4 | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]` |
-| W5 | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
-| W6 | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]` |
+| Tuần | Quyết định chính                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------- |
+| W1   | `[e.g. 3-tier architecture: CloudFront → API Gateway → ECS Fargate → RDS]`                                       |
+| W2   | `[e.g. S3 cho static assets, IAM baseline với MFA trên root]`                                                    |
+| W3   | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]`                    |
+| W4   | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]`                               |
+| W5   | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
+| W6   | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]`          |
 
-### W5 Feedback đã giải quyết *(tuỳ chọn)*
+### W5 Feedback đã giải quyết _(tuỳ chọn)_
 
 `[e.g. "Trainer W5 feedback: MH5 scaling pattern chưa có visual evidence. W6 đã thêm CloudWatch Throttles metric screenshot cho Reserved Concurrency."]`
 
 ---
 
-## Bonus *(Tuỳ chọn)*
+## Bonus _(Tuỳ chọn)_
 
 > Chỉ điền nếu đã hoàn tất cả 4 must-have và Evidence Pack.
 
@@ -536,4 +542,4 @@ def check_and_fix_bucket(bucket_name):
 
 ---
 
-*— End of W6 Evidence Pack —*
+_— End of W6 Evidence Pack —_
