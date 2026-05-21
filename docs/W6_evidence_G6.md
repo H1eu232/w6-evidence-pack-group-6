@@ -379,7 +379,7 @@ aws sns publish \
   --region us-west-2
 ```
 
-![SNS test publish](./imagesTestSNSPublish.png)
+![SNS test publish](./images/TestSNSPublish.png)
 
 <sub>Note: Manual SNS publish trigger Lambda → Lambda stop một resource → xác nhận chain hoạt động end-to-end mà không cần chờ cost data thật.</sub>
 
