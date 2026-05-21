@@ -28,13 +28,6 @@
 | `CostCenter` | `G6` | Group ID |
 | `Application` | `HexaCode` | Nhất quán — không đổi case |
 
-> Temporary guide — xoá block này sau khi đã thay bằng ảnh thật.
-> - `w6-tags-ec2.png`: AWS Console → **EC2** → **Instances** → chọn instance app đã redeploy → tab **Tags**. Chụp sao cho thấy **Name** + đủ 4 key `Owner`, `Environment`, `CostCenter`, `Application`.
-> - `w6-tags-rds.png`: AWS Console → **RDS** → **Databases** → chọn DB instance dùng cho app → tab **Tags**. Chụp rõ tên DB và đủ 4 tag.
-> - `w6-tags-lambda.png`: AWS Console → **Lambda** → chọn function của app hoặc function W6 bạn tự tạo → tab **Configuration** / **Tags**. Theo drift audit, `CostGuardLambda` hiện đang **chưa có tag**, nên nếu dùng function này cho MH-COST-V thì phải tag lại trước khi chụp.
-> - `w6-tags-s3.png`: AWS Console → **S3** → chọn bucket của app → tab **Properties** → **Tags**. Nếu bucket đang chỉ có tag cũ như `Project` mà chưa có `Application`, ảnh này chưa đạt rubric.
-> - Lưu ý theo `docs/aws-console-drift-audit.md`: tag live hiện còn **không nhất quán** (`Environment` có cả `prod` và `production`), nên nên chuẩn hoá xong rồi mới chụp bộ ảnh Section 2.
-
 **Screenshot tag trên EC2 / ECS:**
 
 ![Tags on EC2/ECS](./images/w6-tags-ec2.png)
