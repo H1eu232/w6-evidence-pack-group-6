@@ -32,7 +32,7 @@
 
 ![W5 provisioned concurrency config](./images/Provisioned.png)
 
-<sub>Note: Thiết lập các cơ chế an toàn cho Lambda: (1) Reserved Concurrency (5) giới hạn số lượng task chạy đồng thời để tránh làm cạn kiệt tài nguyên của account. (2) Provisioned Concurrency (2) trên alias live giúp loại bỏ độ trễ 'khởi động lạnh' (Cold Start) cho chatbot AI. (3) Recursive loop detection được kích hoạt để ngăn chặn các vòng lặp vô hạn có thể gây cháy ngân sách trong vài phút."</sub>
+<sub>Note: Thiết lập các cơ chế an toàn cho Lambda: (1) Reserved Concurrency giới hạn số lượng task chạy đồng thời để tránh làm cạn kiệt tài nguyên của account. (2) Provisioned Concurrency trên alias live giúp loại bỏ độ trễ 'khởi động lạnh' (Cold Start) cho chatbot AI. (3) Recursive loop detection được kích hoạt để ngăn chặn các vòng lặp vô hạn có thể gây cháy ngân sách trong vài phút.</sub>
 
 ---
 
