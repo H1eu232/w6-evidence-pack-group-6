@@ -419,7 +419,7 @@ Nhóm HexaCode quyết định triển khai mô hình kiểm soát chi phí "lai
 
 ### 4.1 CloudWatch Dashboard
 
-![CloudWatch dashboard](./images/CloudWatchDashboard.png)
+![CloudWatch dashboard](./images/CloudwatchDashboard.png)
 
 <sub>Note: Dashboard `HexaCode-Production-Observability` có backup metric/alarm widget và các widget metric chuẩn khác. Widget backup dùng data thật từ failed restore verification.</sub>
 
