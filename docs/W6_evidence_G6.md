@@ -743,6 +743,7 @@ This trade-off is strongly justified because the implemented controls significan
 ```
 
 ![CFN validate output](./images/w6-cfn-validate.png)
+
 <sub>Note: `aws cloudformation validate-template` output — template pass validation.</sub>
 
 ---
