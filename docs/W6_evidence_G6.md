@@ -694,16 +694,6 @@ def lambda_handler(event, context):
 
 ### B1 `[ ]` gp2 → gp3 EBS Migration (+0.25)
 
-**Before (gp2):**
-
-![EBS gp2 before](./images/w6-ebs-gp2-before.png)
-<sub>Note: Volume type gp2, IOPS và BurstBalance baseline từ CloudWatch.</sub>
-
-**After (gp3):**
-
-![EBS gp3 after](./images/w6-ebs-gp3-after.png)
-<sub>Note: Volume type gp3, IOPS/throughput đã cấu hình, cost delta so với gp2.</sub>
-
 ---
 
 ### B2 `[ ]` Trusted Advisor Remediations (+0.25)
@@ -720,26 +710,22 @@ def lambda_handler(event, context):
 
 ---
 
-### B3 `[ ]` RI / Savings Plans Break-even Analysis (+0.25)
-
-`[Viết analysis với con số thật. Ví dụ: "Break-even cho 1-year Compute Savings Plan trên ECS Fargate: on-demand cost $X/tháng × 12 = $Y. Savings Plan commitment $Z × 12 = $W. Break-even tại tháng thứ N. Vòng đời workshop 1 tuần → không mua. Sẽ mua khi sustained spend > $X/tháng trong 3+ tháng liên tiếp."]`
+### B3 `[ ]` RI / Savings Plans Break-even Analysis
 
 ---
 
-### B4 `[ ]` "Wasteful → Changed" Reflection (+0.25)
-
-`[100-150 từ với con số thật: tìm thấy gì lãng phí, đã thay đổi gì, cost/performance delta là bao nhiêu.]`
+### B4 `[ ]` "Wasteful → Changed" Reflection 
 
 ---
 
-### B5 `[ ]` Cost Anomaly Automation (+0.25)
+### B5 `[X]` Cost Anomaly Automation (+0.25)
 
 ![Cost Anomaly Detection monitor](./images/w6-anomaly-monitor.png)
 <sub>Note: Monitor scope về `Application=HexaCode`, EventBridge rule trên `aws.costanomalydetection`, SNS notification nhận được.</sub>
 
 ---
 
-### B6 `[ ]` CloudFormation Template cho một resource W6 (+0.25)
+### B6 `[X]` CloudFormation Template cho một resource W6 (+0.25)
 
 ```yaml
 # Paste CFN template snippet ở đây
