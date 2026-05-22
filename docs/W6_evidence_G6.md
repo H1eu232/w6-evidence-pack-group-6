@@ -83,7 +83,7 @@ Additionally, Recursive Loop Detection is enabled to automatically terminate inf
 
 ### 2.2 Cost Allocation Tags — Activated trong Billing Console
 
-![AWS Budgets config](./images/ProdBudget.png)
+![Cost Allocation](./images/CostAllo.png)
 
 ---
 
@@ -438,15 +438,15 @@ Nhóm HexaCode quyết định triển khai mô hình kiểm soát chi phí "lai
 
 ### 4.2 Custom Metric — AWS Backup failure count
 
-**Metric đo gì:** số failed AWS Backup jobs đi qua log-based observability path của nhóm.
+**Metric đo gì:** Metric này đo độ trễ (latency) của quá trình xử lý AI Inference khi đi qua API Gateway. Nó thể hiện khoảng thời gian từ lúc API nhận được yêu cầu cho đến khi nhận được phản hồi từ dịch vụ inference phía sau (backend).
 
 **Nguồn metric:**
 
 ```text
-Log group: /aws/events/hexacode-prod-backup-failures
-Metric namespace: HexaCode/Backup
-Metric name: HexacodeBackupFailures
-Filter logic: match failed backup/copy events via detail.state=FAILED and failed restore events via detail.status=FAILED
+Log group: /aws/apigateway/hexacode-prod
+Metric namespace: HexaCode/Operations
+Metric name: AI_Inference_Latency
+Filter logic: Trích xuất trường integrationLatency (hoặc responseLatency) từ cấu trúc log của API Gateway: { $.integrationLatency = * }.
 ```
 
 ![Custom metric data points](./images/w6-custom-metric.png)
@@ -696,16 +696,6 @@ def lambda_handler(event, context):
 
 ### B1 `[ ]` gp2 → gp3 EBS Migration (+0.25)
 
-**Before (gp2):**
-
-![EBS gp2 before](./images/w6-ebs-gp2-before.png)
-<sub>Note: Volume type gp2, IOPS và BurstBalance baseline từ CloudWatch.</sub>
-
-**After (gp3):**
-
-![EBS gp3 after](./images/w6-ebs-gp3-after.png)
-<sub>Note: Volume type gp3, IOPS/throughput đã cấu hình, cost delta so với gp2.</sub>
-
 ---
 
 ### B2 `[ ]` Trusted Advisor Remediations (+0.25)
@@ -722,26 +712,22 @@ def lambda_handler(event, context):
 
 ---
 
-### B3 `[ ]` RI / Savings Plans Break-even Analysis (+0.25)
-
-`[Viết analysis với con số thật. Ví dụ: "Break-even cho 1-year Compute Savings Plan trên ECS Fargate: on-demand cost $X/tháng × 12 = $Y. Savings Plan commitment $Z × 12 = $W. Break-even tại tháng thứ N. Vòng đời workshop 1 tuần → không mua. Sẽ mua khi sustained spend > $X/tháng trong 3+ tháng liên tiếp."]`
+### B3 `[ ]` RI / Savings Plans Break-even Analysis
 
 ---
 
-### B4 `[ ]` "Wasteful → Changed" Reflection (+0.25)
-
-`[100-150 từ với con số thật: tìm thấy gì lãng phí, đã thay đổi gì, cost/performance delta là bao nhiêu.]`
+### B4 `[ ]` "Wasteful → Changed" Reflection 
 
 ---
 
-### B5 `[ ]` Cost Anomaly Automation (+0.25)
+### B5 `[X]` Cost Anomaly Automation (+0.25)
 
 ![Cost Anomaly Detection monitor](./images/w6-anomaly-monitor.png)
 <sub>Note: Monitor scope về `Application=HexaCode`, EventBridge rule trên `aws.costanomalydetection`, SNS notification nhận được.</sub>
 
 ---
 
-### B6 `[ ]` CloudFormation Template cho một resource W6 (+0.25)
+### B6 `[X]` CloudFormation Template cho một resource W6 (+0.25)
 
 ```yaml
 # Paste CFN template snippet ở đây
