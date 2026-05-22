@@ -715,16 +715,6 @@ This trade-off is strongly justified because the implemented controls significan
 
 ### B2 `[ ]` Trusted Advisor Remediations (+0.25)
 
-**Finding 1:**
-
-![Trusted Advisor finding 1](./images/w6-ta-finding-1.png)
-<sub>Note: Finding → Action taken → Before/After.</sub>
-
-**Finding 2:**
-
-![Trusted Advisor finding 2](./images/w6-ta-finding-2.png)
-<sub>Note: Finding → Action taken → Before/After.</sub>
-
 ---
 
 ### B3 `[ ]` RI / Savings Plans Break-even Analysis
@@ -751,6 +741,7 @@ This trade-off is strongly justified because the implemented controls significan
 ```
 
 ![CFN validate output](./images/w6-cfn-validate.png)
+
 <sub>Note: `aws cloudformation validate-template` output — template pass validation.</sub>
 
 ---
