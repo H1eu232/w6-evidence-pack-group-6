@@ -42,11 +42,22 @@
 
 ## Section 2 — MH-COST-V — Cost Visibility & Attribution
 
+| Tag Key       | Giá trị                        |
+| ------------- | ------------------------------ |
+| `Owner`       | `hoang`                        |
+| `Project`     | `hexacode`                     |
+| `Environment` | `production`                   |
+| `CostCenter`  | `G6`                           |
+| `ManagedBy`   | `terraform`                    |
+| `Keep`        | `true`                         |
+| `Name`        | `hexacode-prod-{related name}` |
+| `Application` | `{related which aws service}`  |
+
 ### 2.1 Tagging — Bốn tag key bắt buộc trên mọi billable resource
 
-**Screenshot tag trên EC2:**
+**Screenshot tag trên ECS:**
 
-![Tags on EC2/ECS](./images/EC2Tag.png)
+![Tags on ECS](./images/ECSTag.png)
 
 **Screenshot tag trên RDS:**
 
@@ -54,7 +65,11 @@
 
 **Screenshot tag trên Lambda:**
 
-![Tags on Lambda](./images/LambdaTag.png)
+![Tags on Lambda-chat](./images/LambdaTag.png)
+
+![Tags on Lambda-kb](./images/LambdaTag2.png)
+
+![Tags on Lambda-cors](./images/LambdaTag3.png)
 
 **Screenshot tag trên S3:**
 
@@ -84,7 +99,7 @@
 
 <sub>Note: </sub>
 
-**Tool 3 — Cost Anomaly Detection (nếu có):**
+**Tool 3 — Cost Anomaly Detection :**
 
 ![Cost Anomaly Detection](./images/CostAnomalyDetection.png)
 
