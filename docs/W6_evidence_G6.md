@@ -436,15 +436,15 @@ Nhóm HexaCode quyết định triển khai mô hình kiểm soát chi phí "lai
 
 ### 4.2 Custom Metric — AWS Backup failure count
 
-**Metric đo gì:** số failed AWS Backup jobs đi qua log-based observability path của nhóm.
+**Metric đo gì:** Metric này đo độ trễ (latency) của quá trình xử lý AI Inference khi đi qua API Gateway. Nó thể hiện khoảng thời gian từ lúc API nhận được yêu cầu cho đến khi nhận được phản hồi từ dịch vụ inference phía sau (backend).
 
 **Nguồn metric:**
 
 ```text
-Log group: /aws/events/hexacode-prod-backup-failures
-Metric namespace: HexaCode/Backup
-Metric name: HexacodeBackupFailures
-Filter logic: match failed backup/copy events via detail.state=FAILED and failed restore events via detail.status=FAILED
+Log group: /aws/apigateway/hexacode-prod
+Metric namespace: HexaCode/Operations
+Metric name: AI_Inference_Latency
+Filter logic: Trích xuất trường integrationLatency (hoặc responseLatency) từ cấu trúc log của API Gateway: { $.integrationLatency = * }.
 ```
 
 ![Custom metric data points](./images/w6-custom-metric.png)
