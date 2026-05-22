@@ -470,6 +470,10 @@ Filter logic: Trích xuất trường integrationLatency (hoặc responseLatency
 
 ![Custom metric data points](./images/w6-custom-metric.png)
 
+---
+
+![custom metric](./images/backupfailure.png)
+
 <sub>Note: Custom metric `HexacodeBackupFailures` trong namespace `HexaCode/Backup` — có datapoint thật từ failed restore verification jobs.</sub>
 
 ---
