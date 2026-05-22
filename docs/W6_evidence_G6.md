@@ -715,6 +715,8 @@ This trade-off is strongly justified because the implemented controls significan
 
 ### B2 `[ ]` Trusted Advisor Remediations (+0.25)
 
+![alt text](./images/trustedad.png)
+
 ---
 
 ### B3 `[ ]` RI / Savings Plans Break-even Analysis
