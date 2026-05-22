@@ -694,14 +694,14 @@ This trade-off is strongly justified because the implemented controls significan
 
 ### Các quyết định kiến trúc và thiết kế chính từ W1-W5
 
-| Tuần | Quyết định chính                                                                                                        |
-| ---- | ----------------------------------------------------------------------------------------------------------------------- |
-| W1   | `[Cloudfront, Cloudwatch, S3, ALB, VPC, ASG, NAT Gateway, ElastiCache, RDS Postgresql]`                                 |
-| W2   | `[WAF, ACM, Shield, External ALB, Internal ALB, EC2, ASG, Cluster, ElastiCache, RDS, S3, SQS, NAT Gateway, Cloudtrail]` |
-| W3   | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]`                           |
-| W4   | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]`                                      |
-| W5   | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]`        |
-| W6   | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]`                 |
+| Tuần | Quyết định kiến trúc chính                                                                                                                                                                          |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W1   | `[CloudFront, Route53, S3 static hosting, VPC multi-tier architecture, ALB, EC2 Auto Scaling Group, NAT Gateway, foundational 3-tier deployment]`                                                   |
+| W2   | `[WAF, ACM, AWS Shield, External/Internal ALB separation, IAM hardening, CloudTrail logging, ECS/EC2 clustering, SQS asynchronous processing, ElastiCache integration]`                             |
+| W3   | `[RDS PostgreSQL database backbone, private database subnet, Bedrock Knowledge Base, Lambda serverless glue, RetrieveAndGenerate workflow, S3 Gateway Endpoint, VPC security group isolation]`      |
+| W4   | `[AI-powered RAG system, Bedrock Agent orchestration, multi-source retrieval, hybrid search (Top-K retrieval), tool-augmented RAG, monitoring API integration, multi-turn memory pipeline]`         |
+| W5   | `[Multi-VPC architecture, VPC Peering, AWS Network Firewall domain allowlist, API Gateway with authentication, EFS shared storage, backup and restore strategy]`                                    |
+| W6   | `[Cost tagging discipline, automated cost guard with EventBridge + Lambda, CloudWatch observability dashboards, custom metrics and alarms, self-healing security guard, security auto-remediation]` |
 
 ---
 
