@@ -353,13 +353,13 @@ def stop_unprotected_services():
 
 ![Cost Guard IAM role](./images/IAMRole.png)
 
-<sub>Note: IAM execution role chỉ có các permission cần thiết — `ec2:StopInstances`, `ec2:DescribeInstances`, `rds:StopDBInstance`, `rds:DescribeDBInstances`, `rds:ListTagsForResource`. Không có `Action: "*"` hay `Resource: "*"`.</sub>
+Note: Implemented a least-privilege IAM policy for the automated Cost Guard Lambda. The policy only grants permissions required for ECS cost-control operations such as `ecs:StopTask` and `ecs:UpdateService`, along with CloudWatch Logs permissions for operational logging and auditability. This minimizes unnecessary privilege exposure while allowing the automation layer to safely perform controlled remediation actions on compute resources.
 
 ### 3.3 EventBridge Daily Schedule
 
 ![EventBridge schedule](./images/EventBridgeDaily.png)
 
-<sub>Note: Schedule daily-cost-guard được cấu hình chạy theo biểu thức cron 0 9 \* _ ? _ (9h sáng hàng ngày), múi giờ Asia/Ho_Chi_Minh. Đây là primary trigger giúp dọn dẹp tài nguyên thừa vào mỗi đầu ngày làm việc.</sub>
+Note: Implemented an automated daily Cost Guard mechanism using Amazon EventBridge Scheduler with a cron-based trigger (`0 9 * * ? *`, Asia/Ho_Chi_Minh timezone). The scheduler automatically invokes the Cost Guard Lambda every day to enforce proactive cost-control policies such as stopping non-essential compute workloads and preventing long-running idle resources from generating unnecessary operational costs.
 
 ---
 
@@ -369,31 +369,31 @@ def stop_unprotected_services():
 
 ![Service before stop](./images/InstanceBefore.png)
 
-<sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
+    Note: hexacode-prod-problem-service đang chạy (1/1 Task running)
 
 **Lambda trigger:**
 
 ![Lambda trigger](./images/LambdaTrigger.png)
 
-<sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
+    Note: hexacode-prod-problem-service đang chạy (1/1 Task running)
 
 **Instance after stop note:**
 
 ![Instance after stop](./images/InstanceAfter.png)
 
-<sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
+    Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.
 
 **Service Stopped:**
 
 ![Problem service stopped](./images/ServiceStopped.png)
 
-<sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
+    Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.
 
 **CloudTrail stop event:**
 
 ![CloudTrail stop event](./images/CloudTrailLog.png)
 
-<sub>Note: Sự kiện UpdateService được ghi nhận. User name: CostGuardLambda xác nhận hành động này do Automation thực hiện, thay đổi desiredCount về 0 để dừng tiêu tốn chi phí Fargate.</sub>
+    Note: Sự kiện UpdateService được ghi nhận. User name: CostGuardLambda xác nhận hành động này do Automation thực hiện, thay đổi desiredCount về 0 để dừng tiêu tốn chi phí Fargate.
 
 ---
 
@@ -455,7 +455,7 @@ Nhóm HexaCode quyết định triển khai mô hình kiểm soát chi phí "lai
 
 <sub>Note: Dashboard `HexaCode-Production-Observability` có backup metric/alarm widget và các widget metric chuẩn khác. Widget backup dùng data thật từ failed restore verification.</sub>
 
-### 4.2 Custom Metric — AWS Backup failure count
+### 4.2 Custom Metric
 
 **Metric đo gì:** Metric này đo độ trễ (latency) của quá trình xử lý AI Inference khi đi qua API Gateway. Nó thể hiện khoảng thời gian từ lúc API nhận được yêu cầu cho đến khi nhận được phản hồi từ dịch vụ inference phía sau (backend).
 
@@ -664,27 +664,21 @@ def lambda_handler(event, context):
 
 ### 5.6 Security Threat Statement
 
-> Temporary guide — xoá block này sau khi viết xong.
->
-> - Viết theo cấu trúc: `misconfiguration là gì -> data/asset nào bị ảnh hưởng -> attacker có thể làm gì`.
-> - Tránh viết chung chung kiểu “bị hack”; rubric muốn thấy blast radius cụ thể.
+A critical security misconfiguration was intentionally simulated by opening an inbound SSH rule (`TCP/22 → 0.0.0.0/0`) on the bastion host security group. Điều này cho phép bất kỳ IP nào trên internet attempt SSH access vào management infrastructure của hệ thống.
 
-**Guard fix misconfiguration gì:**
-`[e.g. "S3 bucket chứa Bedrock KB documents bị set public — mọi người trên internet có thể đọc toàn bộ nội dung knowledge base của app."]`
+If not remediated, the blast radius could include unauthorized access attempts against the management EC2 instance, credential brute-force attacks, infrastructure reconnaissance, hoặc lateral movement vào private VPC resources connected through the bastion layer.
 
-**Blast radius nếu không remediate:**
-`[e.g. "Toàn bộ 36 markdown documents của GeekBrain — bao gồm incident postmortems, SLA targets, team structure — bị lộ công khai. Kẻ tấn công có thể dùng thông tin này để social engineer hoặc target specific vulnerabilities."]`
+To mitigate this risk, an automated Security Guard workflow was implemented using Amazon EventBridge + Lambda. Khi CloudTrail detect event `AuthorizeSecurityGroupIngress`, EventBridge sẽ trigger Lambda để tự động revoke insecure ingress rule (`0.0.0.0/0`) khỏi Security Group. CloudTrail logs confirm successful remediation through the `RevokeSecurityGroupIngress` API event.
+
+Additionally, S3 Block Public Access and a deny-unencrypted-upload bucket policy were enabled to protect internal knowledge-base assets and prevent accidental public exposure or unencrypted object uploads.
 
 ---
 
 ### 5.7 Security-Cost Trade-off Statement
 
-> Temporary guide — xoá block này sau khi viết xong.
->
-> - Nêu **chi phí cụ thể** của control đã chọn, hoặc nói rõ là gần như zero-cost nếu chọn account-level BPA / deny policy.
-> - Sau đó giải thích vì sao chi phí đó đáng trả so với blast radius ở trên.
+The selected security controls have near-zero operational cost because they primarily rely on managed AWS control-plane services such as EventBridge, CloudTrail, S3 Block Public Access, and lightweight Lambda executions. Estimated cost is minimal compared to always-on security appliances or dedicated firewall infrastructure.
 
-`[1-2 câu nêu tên cost cụ thể và justification. Ví dụ: "KMS CMK tốn $1/tháng per key. Justified vì mỗi decrypt event được log kèm IAM principal — đây là audit trail bắt buộc khi data store chứa thông tin thi cử của người dùng. Cost $1/tháng nhỏ hơn nhiều so với rủi ro compliance khi không có audit trail."]`
+This trade-off is strongly justified because the implemented controls significantly reduce the blast radius of common cloud misconfigurations such as publicly exposed management ports or insecure S3 uploads. A single exposed bastion host or public storage bucket could lead to infrastructure compromise, data leakage, or unauthorized access to internal AI/knowledge-base assets — risks that far outweigh the small operational cost of these preventive and auto-remediation mechanisms.
 
 ---
 
@@ -743,8 +737,9 @@ def lambda_handler(event, context):
 
 ### B5 `[X]` Cost Anomaly Automation (+0.25)
 
-![Cost Anomaly Detection monitor](./images/w6-anomaly-monitor.png)
-<sub>Note: Monitor scope về `Application=HexaCode`, EventBridge rule trên `aws.costanomalydetection`, SNS notification nhận được.</sub>
+![cost anomaly](./images/costanomalyb51.png)
+
+![alt text](./images/costanomalyb52.png)
 
 ---
 
@@ -759,5 +754,26 @@ def lambda_handler(event, context):
 <sub>Note: `aws cloudformation validate-template` output — template pass validation.</sub>
 
 ---
+
+## END-TO-END:
+![alt text](./images/image.png)
+
+![alt text](./images/image-1.png)
+
+![alt text](./images/image-2.png)
+
+![alt text](./images/image-3.png)
+
+![alt text](./images/image-4.png)
+
+![alt text](./images/image-5.png)
+
+![alt text](./images/image-6.png)
+
+![alt text](./images/image-7.png)
+
+![alt text](./images/image-8.png)
+
+
 
 _— End of W6 Evidence Pack —_
