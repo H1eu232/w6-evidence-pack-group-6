@@ -81,6 +81,8 @@
 
 ### 2.2 Cost Allocation Tags — Activated trong Billing Console
 
+![AWS Budgets config](./images/ProdBudget.png)
+
 ---
 
 ### 2.3 Cost Monitoring Tool(s) đã cấu hình
@@ -101,7 +103,9 @@
 
 **Tool 3 — Cost Anomaly Detection :**
 
-![Cost Anomaly Detection](./images/CostAnomalyDetection.png)
+![Cost Anomaly Detection](./images/CostAnomalyDetect.png)
+
+![Cost Anomaly Detection](./images/CostAnomalyDetect2.png)
 
 <sub>Note: Cấu hình ML-based monitor 'Finance Team' với ngưỡng $75. Alert subscription đã được xác nhận (Confirmed) qua email nahoangit@gmail.com để phát hiện các biến động chi phí bất thường ngay lập tức.</sub>
 
