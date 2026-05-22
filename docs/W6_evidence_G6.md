@@ -390,11 +390,11 @@ def stop_unprotected_services():
 
 Before:
 
-![sns_before](../images/SNSBefore.png)
+![sns_before](./images/SNSBefore.png)
 
     After:
 
-![sns_after](../images/SNSAfter.png)
+![sns_after](./images/SNSAfter.png)
 
 ---
 
