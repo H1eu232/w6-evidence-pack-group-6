@@ -81,7 +81,7 @@
 
 ### 2.2 Cost Allocation Tags — Activated trong Billing Console
 
-![AWS Budgets config](./images/ProdBudget.png)
+![Cost Allocation](./images/CostAllo.png)
 
 ---
 
