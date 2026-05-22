@@ -353,15 +353,15 @@ def stop_unprotected_services():
 
 ### 3.4 Demonstrated Stop — Before/After + CloudTrail
 
-**Service before stop note:**
+**Instance before stop note:**
 
-![Service before stop](./images/ServiceBefore.png)
+![Service before stop](./images/InstanceBefore.png)
 
 <sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
 
-**Service after stop note:**
+**Instance after stop note:**
 
-![Instance after stop](./images/ServiceAfter.png)
+![Instance after stop](./images/InstanceAfter.png)
 
 <sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
 
