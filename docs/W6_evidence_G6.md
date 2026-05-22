@@ -128,7 +128,7 @@ Additionally, Recursive Loop Detection is enabled to automatically terminate inf
 
 **Quan sát top 3 cost driver:**
 
-Sau khoảng 24h redeploy, top cost driver hiện tại là: (1) Network Firewall (~$5.07) do kiến trúc đang sử dụng centralized traffic inspection/firewall layer cho private workloads; (2) RDS (~$2.38) cho database backend luôn-on của hệ thống; và (3) VPC-related networking (~$1.40) bao gồm NAT/VPC networking components phục vụ traffic private subnet. Đây là một operational cost observation quan trọng vì managed services dạng always-on có thể tiếp tục phát sinh chi phí ngay cả khi workload thực tế gần như bằng 0.
+Sau khoảng 24h redeploy, top cost driver hiện tại là: (1) Network Firewall ($5.07) do kiến trúc đang sử dụng centralized traffic inspection/firewall layer cho private workloads; (2) RDS ($2.38) cho database backend luôn-on của hệ thống; và (3) VPC-related networking (~$1.40) bao gồm NAT/VPC networking components phục vụ traffic private subnet. Đây là một operational cost observation quan trọng vì managed services dạng always-on có thể tiếp tục phát sinh chi phí ngay cả khi workload thực tế gần như bằng 0.
 
 ---
 
