@@ -359,9 +359,22 @@ def stop_unprotected_services():
 
 <sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
 
+**Lambda trigger:**
+
+![Lambda trigger](./images/LambdaTrigger.png)
+
+<sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
+
+
 **Instance after stop note:**
 
 ![Instance after stop](./images/InstanceAfter.png)
+
+<sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
+
+**Service Stopped:**
+
+![Problem service stopped](./images/ServiceStopped.png)
 
 <sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
 
