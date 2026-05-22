@@ -181,7 +181,7 @@ from datetime import datetime
 
 def lambda_handler(event, context):
     print(f"📨 Received event: {json.dumps(event, indent=2)}")
-    
+
     # Check if this is SNS event
     if 'Records' in event and event['Records'][0].get('EventSource') == 'aws:sns':
         return handle_sns_event(event)
@@ -194,7 +194,7 @@ def handle_sns_event(event):
     try:
         sns_message = event['Records'][0]['Sns']['Message']
         print(f"📊 Budget Alert: {sns_message}")
-        
+
         # Parse budget message
         try:
             budget_data = json.loads(sns_message)
@@ -203,12 +203,12 @@ def handle_sns_event(event):
         except:
             budget_name = "Daily Budget"
             amount = "Over $150"
-        
+
         print(f"🚨 BUDGET ALERT: {budget_name} - {amount}")
-        
+
         # Trigger cost optimization
         result = stop_unprotected_services()
-        
+
         return {
             'statusCode': 200,
             'body': json.dumps({
@@ -216,7 +216,7 @@ def handle_sns_event(event):
                 'cost_optimization': result
             })
         }
-        
+
     except Exception as e:
         print(f"❌ Error processing SNS event: {str(e)}")
         return {'statusCode': 500, 'error': str(e)}
@@ -229,26 +229,26 @@ def stop_unprotected_services():
     """Tắt services KHÔNG CÓ tag Keep = true"""
     try:
         ecs = boto3.client('ecs', region_name='us-west-2')
-        
+
         # List all services trong cluster
         services_response = ecs.list_services(cluster='hexacode-prod')
         service_arns = services_response.get('serviceArns', [])
-        
+
         stopped_services = []
         protected_services = []
         errors = []
-        
+
         for service_arn in service_arns:
             try:
                 # Extract service name từ ARN
                 service_name = service_arn.split('/')[-1]
-                
+
                 print(f"🔍 Checking service: {service_name}")
-                
+
                 # Get tags cho service
                 tags_response = ecs.list_tags_for_resource(resourceArn=service_arn)
                 tags = tags_response.get('tags', [])
-                
+
                 # Check for Keep = true tag (PROTECTION)
                 is_protected = False
                 for tag in tags:
@@ -256,22 +256,22 @@ def stop_unprotected_services():
                         is_protected = True
                         print(f"🛡️ Service {service_name} có tag Keep=true - ĐƯỢC BẢO VỆ")
                         break
-                
+
                 if is_protected:
                     # Service được bảo vệ, không tắt
                     protected_services.append(service_name)
                 else:
                     # Service KHÔNG có tag Keep=true → TẮT
                     print(f"🎯 Service {service_name} KHÔNG có tag Keep=true - SẼ BỊ TẮT")
-                    
+
                     # Get current service details
                     service_details = ecs.describe_services(
                         cluster='hexacode-prod',
                         services=[service_name]
                     )
-                    
+
                     current_count = service_details['services'][0]['desiredCount']
-                    
+
                     if current_count > 0:
                         # Scale service to 0
                         response = ecs.update_service(
@@ -294,12 +294,12 @@ def stop_unprotected_services():
                             'new_count': 0,
                             'note': 'already_stopped'
                         })
-                    
+
             except Exception as e:
                 error_msg = f"❌ ERROR processing {service_name}: {str(e)}"
                 errors.append(error_msg)
                 print(error_msg)
-        
+
         result = {
             'timestamp': datetime.now().isoformat(),
             'stopped_services': stopped_services,
@@ -311,17 +311,17 @@ def stop_unprotected_services():
                 'error_count': len(errors)
             }
         }
-        
+
         print(f"📊 SUMMARY:")
         print(f"   🛑 Stopped: {len(stopped_services)} services (no Keep=true tag)")
         print(f"   🛡️ Protected: {len(protected_services)} services (has Keep=true tag)")
         print(f"   ❌ Errors: {len(errors)}")
-        
+
         return {
             'statusCode': 200,
             'body': json.dumps(result, indent=2)
         }
-        
+
     except Exception as e:
         error_msg = f"❌ Error in cost optimization: {str(e)}"
         print(error_msg)
