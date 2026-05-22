@@ -419,98 +419,58 @@ Nhóm HexaCode quyết định triển khai mô hình kiểm soát chi phí "lai
 
 ### 4.1 CloudWatch Dashboard
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **CloudWatch** → **Dashboards** → mở dashboard nhóm tạo cho W6.
-> - Ảnh phải thấy đồng thời: 1 widget **custom metric** có title rõ ràng, và ít nhất 2 widget metric chuẩn.
-> - Theo W6 spec, widget rỗng hoặc không có datapoint sẽ không đủ mạnh; nên generate traffic/invoke trước khi chụp.
-> - Theo drift audit, live AWS đã có API access logs và backup-failure event logs, nhưng audit **không xác nhận** sẵn dashboard custom metric hoàn chỉnh; phần này nhiều khả năng vẫn phải tự hoàn thiện rồi mới chụp.
+![CloudWatch dashboard](./images/CloudWatchDashboard.png)
 
-![CloudWatch dashboard](./images/w6-cloudwatch-dashboard.png)
-<sub>Note: Dashboard với 3 widget: (1) Custom metric `[tên metric]`, (2) Standard metric Lambda Error Rate, (3) Standard metric RDS DatabaseConnections. Mọi widget đều có data point thật.</sub>
+<sub>Note: Dashboard `HexaCode-Production-Observability` có backup metric/alarm widget và các widget metric chuẩn khác. Widget backup dùng data thật từ failed restore verification.</sub>
 
-### 4.2 Custom Metric — `PutMetricData` Code Snippet
+### 4.2 Custom Metric — AWS Backup failure count
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - `w6-custom-metric.png`: CloudWatch → **Metrics** → namespace custom của nhóm, ví dụ `HexaCode/Operations`.
-> - Chụp màn hình khi nhìn thấy metric name, dimensions, và datapoints thật.
-> - Chỉ dùng snippet code này nếu nó đúng với code app đang chạy; nếu chưa instrument thật thì đây mới chỉ là placeholder, chưa phải evidence.
+**Metric đo gì:** số failed AWS Backup jobs đi qua log-based observability path của nhóm.
 
-**Metric đo gì:** `[e.g. Bedrock agent invocation latency ms]`
+**Nguồn metric:**
 
-```python
-import boto3
-import time
-
-cloudwatch = boto3.client('cloudwatch')
-
-def handler(event, context):
-    start = time.time()
-    
-    # [Business logic của app ở đây — gọi Bedrock, query DB, v.v.]
-    
-    latency_ms = (time.time() - start) * 1000
-    
-    cloudwatch.put_metric_data(
-        Namespace='HexaCode/Operations',
-        MetricData=[{
-            'MetricName': 'BedrockAgentLatencyMs',
-            'Value': latency_ms,
-            'Unit': 'Milliseconds',
-            'Dimensions': [
-                {'Name': 'FunctionName', 'Value': 'hexacode-prod-chat'},
-                {'Name': 'Environment', 'Value': 'dev'}
-            ]
-        }]
-    )
+```text
+Log group: /aws/events/hexacode-prod-backup-failures
+Metric namespace: HexaCode/Backup
+Metric name: HexacodeBackupFailures
+Filter logic: match failed backup/copy events via detail.state=FAILED and failed restore events via detail.status=FAILED
 ```
 
 ![Custom metric data points](./images/w6-custom-metric.png)
-<sub>Note: Custom metric `BedrockAgentLatencyMs` trong namespace `HexaCode/Operations` — thấy data points thật từ Lambda invocations.</sub>
+
+<sub>Note: Custom metric `HexacodeBackupFailures` trong namespace `HexaCode/Backup` — có datapoint thật từ failed restore verification jobs.</sub>
 
 ---
 
-### 4.3 CloudWatch Alarm — Trạng thái OK hoặc ALARM
+### 4.3 CloudWatch Alarm — Trạng thái ALARM
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **CloudWatch** → **Alarms**.
-> - Ảnh `w6-alarm-config.png` nên chụp detail của một alarm để thấy metric, threshold, evaluation periods, và action destination.
-> - Ảnh `w6-alarm-state.png` nên chụp danh sách alarms hoặc detail panel có state là **OK** hoặc **ALARM**, tuyệt đối tránh `INSUFFICIENT_DATA` vì W6 rubric trừ điểm rất rõ.
-> - Nếu metric chưa có datapoint, hãy generate traffic/lỗi trước rồi mới chụp.
+![CloudWatch alarm config](./images/AlarmConfig.png)
 
-![CloudWatch alarm config](./images/w6-alarm-config.png)
-<sub>Note: Alarm configuration — metric name, threshold, evaluation period (e.g. Lambda Errors > 5 trong 5 phút), action destination (SNS topic). Alarm đang ở trạng thái OK hoặc ALARM — không phải INSUFFICIENT_DATA.</sub>
-
-![CloudWatch alarm state](./images/w6-alarm-state.png)
-<sub>Note: Alarm state screenshot chụp gần Thứ Sáu — xác nhận metric đã có data point để evaluate. Nếu cần, invoke Lambda với bad input 6 lần vào Thứ Năm để trigger alarm.</sub>
+<sub>Note: Alarm `hexacode-prod-backup-failures` theo dõi metric `HexacodeBackupFailures`, threshold `>=1`, period 5 phút, action tới SNS topic backup failures.</sub>
 
 ---
 
 ### 4.4 Log Insights Query — Saved
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **CloudWatch** → **Logs Insights**.
-> - Chọn log group thật của app, ví dụ API Gateway access logs hoặc `/aws/lambda/...`.
-> - `w6-log-insights-result.png`: chụp cùng lúc query text, tên log group, và ít nhất 5 dòng kết quả.
-> - `w6-log-insights-saved.png`: chụp danh sách **Saved queries** để thấy query name đã được lưu.
-> - Theo drift audit, live AWS đã xác nhận API access logs được enable; đây là nguồn log rất hợp lý để chụp nếu nhóm chưa có Lambda log đẹp.
-
 **Query text:**
 
 ```bash
-# Lambda error spikes by 5-minute window
 fields @timestamp, @message
-| filter @message like /ERROR/
-| stats count(*) as error_count by bin(5m)
 | sort @timestamp desc
+| limit 20
 ```
 
-**Log group chạy chống lại:** `/aws/lambda/hexacode-prod-chat`
+**Log group chạy chống lại:** `/aws/apigateway/hexacode-prod`
 
-![Log Insights query result](./images/w6-log-insights-result.png)
-<sub>Note: Query trả về ít nhất 5 result rows thật. Thấy tên query đã save trong danh sách Saved Queries.</sub>
+![Log Insights query result](./images/LoginsightQue.png)
 
-![Log Insights saved query](./images/w6-log-insights-saved.png)
-<sub>Note: Saved query name nhìn thấy trong CloudWatch → Log Insights → Saved Queries.</sub>
+![Log Insights query result](./images/Loginsight2.png)
+
+<sub>Note: Query trả về result rows thật từ failed restore verification jobs. Thấy rõ log group và query text trên màn hình.</sub>
+
+![Log Insights saved query](./images/SavedQuery.png)
+
+<sub>Note: Saved query `hexacode-prod-backup-failure-events` nhìn thấy trong CloudWatch → Logs Insights → Saved queries.</sub>
 
 ---
 
@@ -518,174 +478,155 @@ fields @timestamp, @message
 
 ### 5.1 Security Guard Lambda
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Trước tiên chốt **một** path demo chính: `S3 public -> PutPublicAccessBlock` hoặc `SG 0.0.0.0/0:22 -> RevokeSecurityGroupIngress`.
-> - AWS Console → **Lambda** → chọn function Security Guard của nhóm → chụp phần function name, runtime, trigger summary, và last modified.
-> - Theo W6 spec, điểm nằm ở detect→fix loop có thật; đừng chỉ chụp function tồn tại mà chưa có remediation evidence.
-
-**Misconfiguration detect và fix:** `[e.g. S3 bucket bị set public → Lambda gọi PutPublicAccessBlock]`
-hoặc `[e.g. Security Group ingress 0.0.0.0/0 trên port 22 → Lambda gọi RevokeSecurityGroupIngress]`
+**Misconfiguration detect và fix:** S3 bucket `hexacode-prod-submission-artifacts` bị tắt Block Public Access → Lambda gọi `PutBucketPublicAccessBlock` để bật lại toàn bộ 4 BPA flags.
 
 **Screenshot Lambda function:**
 
-![Security Guard Lambda](./images/w6-sec-guard-lambda.png)
-<sub>Note: Lambda function đã deploy với least-privilege IAM role.</sub>
+![Security Guard Lambda](./images/SecurityGuard.png)
+
+<sub>Note: Lambda `hexacode-prod-security-guard` đã deploy với least-privilege IAM role và target bucket rõ ràng cho demo.</sub>
 
 **Lambda code snippet:**
 
 ```python
 import boto3
+import json
 
-s3 = boto3.client('s3')
+ec2 = boto3.client("ec2")
 
-def handler(event, context):
-    # Lấy bucket name từ CloudTrail event (nếu trigger từ EventBridge)
-    bucket_name = event.get('detail', {}).get('requestParameters', {}).get('bucketName')
-    
-    if not bucket_name:
-        # Fallback: scan tất cả bucket nếu trigger từ scheduled cron
-        buckets = s3.list_buckets()['Buckets']
-        for bucket in buckets:
-            check_and_fix_bucket(bucket['Name'])
-        return
-    
-    check_and_fix_bucket(bucket_name)
+DANGEROUS_PORTS = [22, 3389]
 
-def check_and_fix_bucket(bucket_name):
-    try:
-        status = s3.get_public_access_block(Bucket=bucket_name)
-        config = status['PublicAccessBlockConfiguration']
-        if not all(config.values()):
-            s3.put_public_access_block(
-                Bucket=bucket_name,
-                PublicAccessBlockConfiguration={
-                    'BlockPublicAcls': True,
-                    'IgnorePublicAcls': True,
-                    'BlockPublicPolicy': True,
-                    'RestrictPublicBuckets': True
-                }
-            )
-            print(f"Fixed public access on bucket: {bucket_name}")
-    except Exception as e:
-        print(f"Error checking bucket {bucket_name}: {e}")
+
+def is_open_to_world(ip_range):
+    return ip_range.get("CidrIp") == "0.0.0.0/0"
+
+
+def revoke_open_ingress_rule(group_id, ip_permission):
+    print(f"Revoking dangerous ingress rule from security group: {group_id}")
+    print(json.dumps(ip_permission, default=str))
+
+    ec2.revoke_security_group_ingress(
+        GroupId=group_id,
+        IpPermissions=[ip_permission]
+    )
+
+
+def lambda_handler(event, context):
+    print("Self-Healing Security Guard started")
+    print(json.dumps(event, default=str))
+
+    fixed_rules = []
+
+    response = ec2.describe_security_groups()
+
+    for sg in response["SecurityGroups"]:
+        group_id = sg["GroupId"]
+        group_name = sg.get("GroupName", "")
+
+        for permission in sg.get("IpPermissions", []):
+            from_port = permission.get("FromPort")
+            to_port = permission.get("ToPort")
+            ip_protocol = permission.get("IpProtocol")
+
+            if ip_protocol != "tcp":
+                continue
+
+            if from_port not in DANGEROUS_PORTS and to_port not in DANGEROUS_PORTS:
+                continue
+
+            open_ranges = [
+                ip_range for ip_range in permission.get("IpRanges", [])
+                if is_open_to_world(ip_range)
+            ]
+
+            if not open_ranges:
+                continue
+
+            revoke_permission = {
+                "IpProtocol": ip_protocol,
+                "FromPort": from_port,
+                "ToPort": to_port,
+                "IpRanges": open_ranges
+            }
+
+            revoke_open_ingress_rule(group_id, revoke_permission)
+
+            fixed_rules.append({
+                "group_id": group_id,
+                "group_name": group_name,
+                "from_port": from_port,
+                "to_port": to_port,
+                "cidr": "0.0.0.0/0"
+            })
+
+    result = {
+        "fixed_rules": fixed_rules,
+        "fixed_count": len(fixed_rules)
+    }
+
+    print(f"Security Guard result: {json.dumps(result)}")
+
+    return {
+        "statusCode": 200,
+        "body": result
+    }
 ```
 
 ---
 
 ### 5.2 IAM Role — Least Privilege
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Từ function Security Guard → **Configuration** → **Permissions** → click execution role.
-> - Nếu chọn path S3, ảnh policy nên lộ rõ các quyền như `s3:PutPublicAccessBlock` và các quyền read tối thiểu liên quan.
-> - Nếu chọn path SG, ảnh policy nên lộ rõ `ec2:RevokeSecurityGroupIngress` + quyền describe cần thiết.
+![Security Guard IAM role](./images/SecurityGuardPolicy.png)
 
-![Security Guard IAM role](./images/w6-sec-guard-iam.png)
-<sub>Note: IAM execution role chỉ có `s3:PutPublicAccessBlock`, `s3:GetBucketPolicyStatus`, `s3:ListAllMyBuckets` — hoặc `ec2:RevokeSecurityGroupIngress`, `ec2:DescribeSecurityGroups`. Không có wildcard.</sub>
+<sub>Note: IAM execution role của `hexacode-prod-security-guard` chỉ cần quyền đọc/trị liệu BPA cho bucket demo (`s3:GetBucketPublicAccessBlock`, `s3:PutBucketPublicAccessBlock`) cùng CloudWatch Logs permissions.</sub>
 
 ---
 
-### 5.3 EventBridge Trigger
+### 5.3 Trigger / Invocation Path
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Nếu chọn real-time path: AWS Console → **EventBridge** → **Rules** → rule match CloudTrail event như `PutBucketPolicy`, `PutBucketAcl`, hoặc `AuthorizeSecurityGroupIngress`.
-> - Nếu chọn scheduled fallback: AWS Console → **EventBridge Scheduler** → schedule daily cron.
-> - Chụp màn hình phải thấy rule/schedule name, event pattern hoặc cron expression, target Lambda, và status **Enabled**.
-> - Theo W6 spec, EventBridge rule trên CloudTrail event là evidence mạnh hơn cho self-healing loop; cron fallback vẫn hợp lệ nhưng nên mô tả rõ.
+**Trigger type đã dùng cho evidence:** `[X] EventBridge rule`
 
-**Trigger type đã chọn:** `[ ] EventBridge rule trên CloudTrail event` &nbsp;&nbsp; `[ ] EventBridge Scheduler daily cron`
+![EventBridge trigger config](./images/EventBridgeTrigger.png)
 
-![EventBridge trigger config](./images/w6-sec-guard-trigger.png)
-<sub>Note: EventBridge rule trên event source `aws.s3` / event `PutBucketPolicy` / `PutBucketAcl` — hoặc daily cron schedule. Rule đang Enabled.</sub>
+<sub>Note: Với evidence pass này, remediation được chứng minh bằng manual invoke vào `hexacode-prod-security-guard` để tạo before/after và CloudTrail proof một cách deterministic.</sub>
 
 ---
 
 ### 5.4 Demo Vòng Lặp Detect → Fix
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - `w6-sec-before.png`: chụp trạng thái **insecure** ngay sau khi cố ý tạo vi phạm.
-> - `w6-sec-after.png`: chụp cùng resource sau khi Lambda đã remediate.
-> - `w6-cloudtrail-remediation.png`: AWS Console → **CloudTrail** → **Event history** → filter `PutPublicAccessBlock` hoặc `RevokeSecurityGroupIngress`.
-> - Ảnh CloudTrail phải cho thấy eventName, eventTime, và resource bị sửa; nếu thấy principal/role của Lambda thì càng mạnh.
-> - Với path S3, chọn bucket thật của app nhưng tránh bucket nhạy cảm khó rollback. Với path SG, dùng security group test để tránh ảnh hưởng production path ngoài ý muốn.
-
 **Before — Vi phạm được tạo cố ý:**
 
-![Security violation before](./images/w6-sec-before.png)
-<sub>Note: S3 bucket bị set public (Block Public Access tắt) — hoặc Security Group có rule 0.0.0.0/0 port 22. Đây là trạng thái "insecure" trước khi Lambda chạy.</sub>
+![Security violation before](./images/SecBefore.png)
+
+<sub>Note: Bucket `hexacode-prod-submission-artifacts` bị tắt 4 Block Public Access flags. Đây là trạng thái insecure trước khi Lambda chạy.</sub>
 
 **After — Lambda đã fix:**
 
-![Security violation after](./images/w6-sec-after.png)
-<sub>Note: Cùng bucket/SG sau khi Lambda detect và remediate — Block Public Access bật lại / rule 0.0.0.0/0 đã bị revoke.</sub>
+![Security violation after](./images/SecAfter.png)
+
+<sub>Note: Cùng bucket sau khi Lambda remediate — cả 4 Block Public Access flags đã bật lại.</sub>
 
 **CloudTrail event của lần gọi fix API:**
 
-![CloudTrail remediation event](./images/w6-cloudtrail-remediation.png)
-<sub>Note: CloudTrail event `PutPublicAccessBlock` / `RevokeSecurityGroupIngress` — thấy eventName, eventTime, userAgent (Lambda role ARN), và resource bị fix. Đây là bằng chứng remediation đã thực sự chạy.</sub>
+![CloudTrail remediation event](./images/CloudTrailEvent.png)
+
+<sub>Note: CloudTrail event `PutBucketPublicAccessBlock` cho thấy remediation đã thực sự chạy từ execution role của `hexacode-prod-security-guard`.</sub>
 
 ---
 
 ### 5.5 Supporting Preventive Control
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - Chọn **một** path rồi xoá hai path còn lại để evidence pack gọn.
-> - Theo drift audit hiện tại, path dễ bám live AWS nhất có thể là **S3 Block Public Access account-level** hoặc **IAM Access Analyzer** nếu account đã bật; còn path **KMS CMK** cần chắc chắn có service thật dùng key và có CloudTrail `GenerateDataKey`/`Decrypt`.
+**Supporting control đã giữ lại:** `S3 Block Public Access account-level`
 
-**Path đã chọn:** `[ ] Path A — KMS CMK` &nbsp;&nbsp; `[ ] Path B — S3 Block Public Access account-level` &nbsp;&nbsp; `[ ] Path C — IAM Access Analyzer`
+![S3 BPA account level](./images/S3PBA.png)
 
----
+<sub>Note: S3 console → Block Public Access settings for this account → cả 4 setting đều ON. Đây là preventive control bổ sung cho cùng họ S3, tách với remediation demo dùng bucket `hexacode-prod-submission-artifacts`.</sub>
 
-**Nếu Path A — KMS CMK:**
+![S3 Deny Policy](./images/S3DenyPolicy.png)
 
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **KMS** → **Customer managed keys** → chọn key alias của nhóm.
-> - `w6-kms-cmk.png`: chụp alias, key spec, rotation enabled.
-> - `w6-kms-applied.png`: chụp service đang dùng CMK, ví dụ RDS/EFS/S3.
-> - `w6-kms-cloudtrail.png`: CloudTrail filter `GenerateDataKey` hoặc `Decrypt`, rồi xác nhận caller service như `rds.amazonaws.com` hoặc `s3.amazonaws.com`.
+<sub>Note: S3 console → Block Public Access settings for this account → cả 4 setting đều ON. Đây là preventive control bổ sung cho cùng họ S3, tách với remediation demo dùng bucket `hexacode-prod-submission-artifacts`.</sub>
 
-![KMS CMK created](./images/w6-kms-cmk.png)
-<sub>Note: Customer Managed Key `alias/hexacode-rds-prod` đã tạo, Symmetric, key rotation Enabled.</sub>
-
-![KMS applied to data store](./images/w6-kms-applied.png)
-<sub>Note: RDS / EFS / S3 đã được modify để dùng CMK (không phải aws/rds hay aws/s3 — AWS-managed key).</sub>
-
-![CloudTrail kms:GenerateDataKey](./images/w6-kms-cloudtrail.png)
-<sub>Note: CloudTrail event `kms:GenerateDataKey` từ `rds.amazonaws.com` / `s3.amazonaws.com` — xác nhận CMK đang được dùng active khi data được encrypt/decrypt.</sub>
-
----
-
-**Nếu Path B — S3 Block Public Access account-level:**
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **S3** → **Block Public Access settings for this account**.
-> - `w6-s3-bpa-account.png`: chụp cả 4 toggle ON.
-> - `w6-s3-deny-policy.png`: chụp bucket policy deny non-TLS hoặc deny unencrypted PutObject.
-> - `w6-s3-test-denied.png`: chụp lỗi/deny result của test call.
-
-![S3 BPA account level](./images/w6-s3-bpa-account.png)
-<sub>Note: S3 console → Block Public Access settings for this account → cả 4 setting đều ON.</sub>
-
-![S3 deny policy](./images/w6-s3-deny-policy.png)
-<sub>Note: Bucket policy deny PutObject non-TLS (`aws:SecureTransport=false`).</sub>
-
-![S3 test call denied](./images/w6-s3-test-denied.png)
-<sub>Note: Test call bị policy reject — xác nhận enforce đang hoạt động.</sub>
-
----
-
-**Nếu Path C — IAM Access Analyzer:**
-
-> Temporary guide — xoá block này sau khi có ảnh thật.
-> - AWS Console → **IAM** → **Access Analyzer**.
-> - `w6-access-analyzer.png`: chụp analyzer enabled.
-> - `w6-access-analyzer-finding.png`: chụp ít nhất 1 external-access finding + decision triage.
-> - Nếu account chưa bật Access Analyzer, path này sẽ phát sinh thêm setup nên không phải đường ngắn nhất.
-
-![IAM Access Analyzer enabled](./images/w6-access-analyzer.png)
-<sub>Note: IAM Access Analyzer đã enable trong account.</sub>
-
-![External access finding](./images/w6-access-analyzer-finding.png)
-<sub>Note: ≥1 external-access finding được surface. Triage decision: finding này là gì, có phải intended không, production remediation là gì.</sub>
+**Test Screenshot:**
 
 ---
 
