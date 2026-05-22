@@ -741,14 +741,9 @@ This trade-off is strongly justified because the implemented controls significan
 
 ### B6 `[X]` CloudFormation Template cho một resource W6 (+0.25)
 
-```yaml
-# Paste CFN template snippet ở đây
-# Provision Security Guard Lambda + EventBridge trigger + IAM role
-```
+![terraform evidence](./images/tfevidence.png)
 
-![CFN validate output](./images/w6-cfn-validate.png)
-
-<sub>Note: `aws cloudformation validate-template` output — template pass validation.</sub>
+![terraform evidence](./images/tfevi.png)
 
 ---
 
