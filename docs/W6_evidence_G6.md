@@ -20,7 +20,7 @@
 
 ![W5 throttling fixed](./images/APIThrottling.png)
 
-<sub>Note: Cấu hình giới hạn tốc độ (Throttling) cho route /api/chat/messages với Rate=10 và Burst=20. Đây là một lớp bảo vệ 'Operations Hardening' quan trọng nhằm ngăn chặn các cuộc tấn công DDoS hoặc lỗi logic từ phía client gây ra hiện tượng 'runaway costs' (chi phí tăng vọt ngoài ý muốn) khi gọi các dịch vụ đắt tiền như Lambda và Bedrock.</sub>
+Note: Configured route-level throttling for `/api/chat/messages` (`Rate=10 req/s`, `Burst=20`) as part of the W6 Operations Hardening strategy. The control helps mitigate abuse, unexpected traffic spikes, and client-side retry storms that could otherwise generate runaway operational costs on downstream AI workloads such as AWS Lambda and Amazon Bedrock.
 
 #### 1.2 Backup selection không còn mô tả kiểu assign-by-prefix
 
@@ -36,7 +36,9 @@
 
 ![W5 provisioned concurrency config](./images/Provisioned.png)
 
-<sub>Note: Thiết lập các cơ chế an toàn cho Lambda: (1) Reserved Concurrency giới hạn số lượng task chạy đồng thời để tránh làm cạn kiệt tài nguyên của account. (2) Provisioned Concurrency trên alias live giúp loại bỏ độ trễ 'khởi động lạnh' (Cold Start) cho chatbot AI. (3) Recursive loop detection được kích hoạt để ngăn chặn các vòng lặp vô hạn có thể gây cháy ngân sách trong vài phút.</sub>
+Note: Configured Lambda concurrency controls with `Reserved Concurrency = 5` and `Provisioned Concurrency = 2` for the `live` alias. This limits maximum parallel executions to prevent runaway scaling costs while keeping a small number of warm instances ready to reduce cold-start latency for AI/chat workloads.
+
+Additionally, Recursive Loop Detection is enabled to automatically terminate infinite invocation loops and protect the system from accidental self-triggering behavior.
 
 ---
 
