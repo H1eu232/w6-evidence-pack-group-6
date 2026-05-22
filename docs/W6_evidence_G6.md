@@ -1,15 +1,16 @@
 # Evidence Pack — W6: Operations Hardening & Cost-Aware Cloud
+
 # Group 6 — HexaCode
 
 ---
 
 ## Section 1 — Cover
 
-| Field | Details |
-|---|---|
-| **Group Number** | Group 6 |
-| **Member Names** | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Đình Thông · Thành Tâm |
-| **Link Repo** | [GitHub repo URL](https://github.com/H1eu232/w6-evidence-pack-group-6.git) |
+| Field                | Details                                                                                             |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| **Group Number**     | Group 6                                                                                             |
+| **Member Names**     | Minh Tuấn · Thành Vinh · Anh Hoàng · Hoàng Nhân · Mạnh Khang · Ngọc Thắng · Đình Thông · Thành Tâm  |
+| **Link Repo**        | [GitHub repo URL](https://github.com/H1eu232/w6-evidence-pack-group-6.git)                          |
 | **W5 Evidence Pack** | [W5_evidence](https://github.com/H1eu232/w6-evidence-pack-group-6/edit/main/docs/W6_evidence_G6.md) |
 
 ### W5 Feedback đã giải quyết
@@ -20,7 +21,7 @@
 
 ![W5 throttling fixed](./images/APIThrottling.png)
 
-<sub>Note: Cấu hình giới hạn tốc độ (Throttling) cho route /api/chat/messages với Rate=10 và Burst=20. Đây là một lớp bảo vệ 'Operations Hardening' quan trọng nhằm ngăn chặn các cuộc tấn công DDoS hoặc lỗi logic từ phía client gây ra hiện tượng 'runaway costs' (chi phí tăng vọt ngoài ý muốn) khi gọi các dịch vụ đắt tiền như Lambda và Bedrock.</sub>
+Note: Configured route-level throttling for `/api/chat/messages` (`Rate=10 req/s`, `Burst=20`) as part of the W6 Operations Hardening strategy. The control helps mitigate abuse, unexpected traffic spikes, and client-side retry storms that could otherwise generate runaway operational costs on downstream AI workloads such as AWS Lambda and Amazon Bedrock.
 
 #### 1.2 Backup selection không còn mô tả kiểu assign-by-prefix
 
@@ -36,7 +37,9 @@
 
 ![W5 provisioned concurrency config](./images/Provisioned.png)
 
-<sub>Note: Thiết lập các cơ chế an toàn cho Lambda: (1) Reserved Concurrency giới hạn số lượng task chạy đồng thời để tránh làm cạn kiệt tài nguyên của account. (2) Provisioned Concurrency trên alias live giúp loại bỏ độ trễ 'khởi động lạnh' (Cold Start) cho chatbot AI. (3) Recursive loop detection được kích hoạt để ngăn chặn các vòng lặp vô hạn có thể gây cháy ngân sách trong vài phút.</sub>
+Note: Configured Lambda concurrency controls with `Reserved Concurrency = 5` and `Provisioned Concurrency = 2` for the `live` alias. This limits maximum parallel executions to prevent runaway scaling costs while keeping a small number of warm instances ready to reduce cold-start latency for AI/chat workloads.
+
+Additionally, Recursive Loop Detection is enabled to automatically terminate infinite invocation loops and protect the system from accidental self-triggering behavior.
 
 ---
 
@@ -83,6 +86,8 @@
 
 ![Cost Allocation](./images/CostAllo.png)
 
+    Bị access denied!
+
 ---
 
 ### 2.3 Cost Monitoring Tool(s) đã cấu hình
@@ -103,8 +108,6 @@
 
 ![Cost Anomaly Detection](./images/CostAnomalyDetect.png)
 
-![Cost Anomaly Detection](./images/CostAnomalyDetect2.png)
-
 <sub>Note: Cấu hình ML-based monitor 'Finance Team' với ngưỡng $75. Alert subscription đã được xác nhận (Confirmed) qua email nahoangit@gmail.com để phát hiện các biến động chi phí bất thường ngay lập tức.</sub>
 
 ---
@@ -113,50 +116,65 @@
 
 ![Cost Breakdown](./images/CostExplorer2.png)
 
+    Ban đầu
+
+![Cost 24h](./images/costExplorer3.png)
+
+    Sau 24h
+
 <sub>Note: Screenshot Cost Explorer sau 24h redeploy, filter theo tag `Application=HexaCode`.</sub>
 
 **Quan sát top 3 cost driver:**
 
-`[Viết 1 paragraph ở đây. Ví dụ: "Top 3 cost driver sau 24h redeploy: (1) RDS db.m7i.large chiếm ~45% tổng chi phí ($X) — đang chạy Multi-AZ trong dev environment, có thể tắt Multi-AZ để cắt ~50% dòng RDS. (2) NAT Gateway data processing chiếm ~25% ($X) — Lambda chatbot gọi Bedrock qua NAT, có thể chuyển sang VPC endpoint để giảm. (3) ECS Fargate chiếm ~20% ($X) — 3 services chạy liên tục kể cả khi không có traffic, có thể scale down ngoài giờ."]`
+**Quan sát top 3 cost driver:**
+
+Sau khoảng 24h redeploy, top cost driver hiện tại là: (1) Network Firewall (~$5.07) do kiến trúc đang sử dụng centralized traffic inspection/firewall layer cho private workloads; (2) RDS (~$2.38) cho database backend luôn-on của hệ thống; và (3) VPC-related networking (~$1.40) bao gồm NAT/VPC networking components phục vụ traffic private subnet. Đây là một operational cost observation quan trọng vì managed services dạng always-on có thể tiếp tục phát sinh chi phí ngay cả khi workload thực tế gần như bằng 0.
 
 ---
 
 ### 2.5 — Tagging Strategy Document
 
 ### 1. Objective
+
 Tagging Strategy của dự án **HexaCode** được thiết kế để tối ưu hóa khả năng giám sát tài nguyên và phân bổ chi phí chi tiết. Thay vì sử dụng các nhãn chung, nhóm tập trung vào việc định danh chức năng cụ thể của từng dịch vụ, giúp quy trình vận hành và xử lý sự cố diễn ra nhanh chóng.
 
 ### 2. Tag Schema
 
-| Tag Key | Giá trị thực tế áp dụng | Quy tắc đặt giá trị | Phạm vi áp dụng |
-| :--- | :--- | :--- | :--- |
-| **Project** | `hexacode` | Tên dự án (Dùng làm bộ lọc chính trong Cost Explorer). | Toàn bộ tài nguyên |
-| **Application** | `RDS-postgres-main`, `Lambda-chat-service`, `S3-terraform-state` | Định danh theo cú pháp: [Service]-[Chức năng]-[Vị trí]. | Toàn bộ tài nguyên |
-| **Environment** | `production` | Xác định môi trường vận hành là Production. | Toàn bộ tài nguyên |
-| **Owner** | `hoang` | Tên thành viên chịu trách nhiệm quản lý chính. | Toàn bộ tài nguyên |
-| **CostCenter** | `G6` | Mã định danh Nhóm 6 để quản lý ngân sách. | Toàn bộ tài nguyên |
-| **ManagedBy** | `terraform` | Xác định nguồn gốc khởi tạo (IaC hoặc Manual). | Các tài nguyên deploy qua code |
+| Tag Key         | Giá trị thực tế áp dụng                                          | Quy tắc đặt giá trị                                     | Phạm vi áp dụng                |
+| :-------------- | :--------------------------------------------------------------- | :------------------------------------------------------ | :----------------------------- |
+| **Project**     | `hexacode`                                                       | Tên dự án (Dùng làm bộ lọc chính trong Cost Explorer).  | Toàn bộ tài nguyên             |
+| **Application** | `RDS-postgres-main`, `Lambda-chat-service`, `S3-terraform-state` | Định danh theo cú pháp: [Service]-[Chức năng]-[Vị trí]. | Toàn bộ tài nguyên             |
+| **Environment** | `production`                                                     | Xác định môi trường vận hành là Production.             | Toàn bộ tài nguyên             |
+| **Owner**       | `hoang`                                                          | Tên thành viên chịu trách nhiệm quản lý chính.          | Toàn bộ tài nguyên             |
+| **CostCenter**  | `G6`                                                             | Mã định danh Nhóm 6 để quản lý ngân sách.               | Toàn bộ tài nguyên             |
+| **ManagedBy**   | `terraform`                                                      | Xác định nguồn gốc khởi tạo (IaC hoặc Manual).          | Các tài nguyên deploy qua code |
 
 ### 3. Quy tắc định danh Application (Granularity)
+
 Nhóm áp dụng mô hình định danh chi tiết cho tag `Application` nhằm hỗ trợ việc phân tách hóa đơn (Cost Breakdown) đến từng dịch vụ đơn lẻ:
-*   **Dịch vụ Compute:** Phân loại theo chức năng logic (Ví dụ: `Lambda-chat-service`).
-*   **Dịch vụ Database:** Phân loại theo Engine và vai trò (Ví dụ: `RDS-postgres-main`).
-*   **Dịch vụ Storage:** Phân loại theo mục đích sử dụng (Ví dụ: `S3-terraform-state`).
+
+- **Dịch vụ Compute:** Phân loại theo chức năng logic (Ví dụ: `Lambda-chat-service`).
+- **Dịch vụ Database:** Phân loại theo Engine và vai trò (Ví dụ: `RDS-postgres-main`).
+- **Dịch vụ Storage:** Phân loại theo mục đích sử dụng (Ví dụ: `S3-terraform-state`).
 
 ### 4. Chiến lược truy vết chi phí (Cost Attribution)
+
 Trong AWS Billing & Cost Explorer, nhóm sử dụng cơ chế lọc hai tầng:
+
 1.  **Tầng dự án:** Sử dụng tag **`Project: hexacode`** để xem tổng quan chi phí của cả nhóm so với hạn mức $150.
 2.  **Tầng dịch vụ:** Sử dụng tag **`Application`** để xác định thành phần nào trong hệ thống đang tiêu tốn ngân sách nhiều nhất, từ đó đưa ra quyết định tối ưu hóa (Right-sizing).
 
 ### 5. Cơ chế đảm bảo tuân thủ (Compliance)
-*   **Infrastructure as Code (IaC):** Sử dụng Terraform để tự động gán các nhãn `ManagedBy`, `Project` và `CostCenter` ngay khi tạo mới, đảm bảo tính nhất quán và tránh sai sót do con người.
-*   **Kiểm soát vận hành:** Tag `Owner: hoang` giúp định danh người chịu trách nhiệm khi hệ thống có cảnh báo từ CloudWatch Alarms hoặc khi Cost Anomaly Detection phát hiện chi tiêu bất thường.
-*   **Rà soát định kỳ:** Nhóm sử dụng công cụ **Tag Editor** trong AWS Console để kiểm tra hàng tuần, đảm bảo không có tài nguyên nào bị bỏ sót (Untagged resources).
+
+- **Infrastructure as Code (IaC):** Sử dụng Terraform để tự động gán các nhãn `ManagedBy`, `Project` và `CostCenter` ngay khi tạo mới, đảm bảo tính nhất quán và tránh sai sót do con người.
+- **Kiểm soát vận hành:** Tag `Owner: hoang` giúp định danh người chịu trách nhiệm khi hệ thống có cảnh báo từ CloudWatch Alarms hoặc khi Cost Anomaly Detection phát hiện chi tiêu bất thường.
+- **Rà soát định kỳ:** Nhóm sử dụng công cụ **Tag Editor** trong AWS Console để kiểm tra hàng tuần, đảm bảo không có tài nguyên nào bị bỏ sót (Untagged resources).
 
 ### 6. Forbidden Values
-*   **Project:** Không sử dụng các giá trị chung như `test`, `aws`, hoặc bỏ trống.
-*   **Owner:** Không dùng tên chung của nhóm (G6), phải dùng tên cá nhân chịu trách nhiệm.
-*   **Environment:** Tuyệt đối không để trống, giá trị mặc định phải là `production` cho stack chính của dự án.
+
+- **Project:** Không sử dụng các giá trị chung như `test`, `aws`, hoặc bỏ trống.
+- **Owner:** Không dùng tên chung của nhóm (G6), phải dùng tên cá nhân chịu trách nhiệm.
+- **Environment:** Tuyệt đối không để trống, giá trị mặc định phải là `production` cho stack chính của dự án.
 
 ---
 
@@ -335,13 +353,13 @@ def stop_unprotected_services():
 
 ![Cost Guard IAM role](./images/IAMRole.png)
 
-<sub>Note: IAM execution role chỉ có các permission cần thiết — `ec2:StopInstances`, `ec2:DescribeInstances`, `rds:StopDBInstance`, `rds:DescribeDBInstances`, `rds:ListTagsForResource`. Không có `Action: "*"` hay `Resource: "*"`.</sub>
+Note: Implemented a least-privilege IAM policy for the automated Cost Guard Lambda. The policy only grants permissions required for ECS cost-control operations such as `ecs:StopTask` and `ecs:UpdateService`, along with CloudWatch Logs permissions for operational logging and auditability. This minimizes unnecessary privilege exposure while allowing the automation layer to safely perform controlled remediation actions on compute resources.
 
 ### 3.3 EventBridge Daily Schedule
 
 ![EventBridge schedule](./images/EventBridgeDaily.png)
 
-<sub>Note: Schedule daily-cost-guard được cấu hình chạy theo biểu thức cron 0 9 * * ? * (9h sáng hàng ngày), múi giờ Asia/Ho_Chi_Minh. Đây là primary trigger giúp dọn dẹp tài nguyên thừa vào mỗi đầu ngày làm việc.</sub>
+Note: Implemented an automated daily Cost Guard mechanism using Amazon EventBridge Scheduler with a cron-based trigger (`0 9 * * ? *`, Asia/Ho_Chi_Minh timezone). The scheduler automatically invokes the Cost Guard Lambda every day to enforce proactive cost-control policies such as stopping non-essential compute workloads and preventing long-running idle resources from generating unnecessary operational costs.
 
 ---
 
@@ -351,32 +369,31 @@ def stop_unprotected_services():
 
 ![Service before stop](./images/InstanceBefore.png)
 
-<sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
+    Note: hexacode-prod-problem-service đang chạy (1/1 Task running)
 
 **Lambda trigger:**
 
 ![Lambda trigger](./images/LambdaTrigger.png)
 
-<sub>Note: hexacode-prod-problem-service đang chạy (1/1 Task running)</sub>
-
+    Note: hexacode-prod-problem-service đang chạy (1/1 Task running)
 
 **Instance after stop note:**
 
 ![Instance after stop](./images/InstanceAfter.png)
 
-<sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
+    Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.
 
 **Service Stopped:**
 
 ![Problem service stopped](./images/ServiceStopped.png)
 
-<sub>Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.</sub>
+    Note: Tất cả service chuyển sang trạng thái 0/0 Task running sau khi Lambda chạy.
 
 **CloudTrail stop event:**
 
 ![CloudTrail stop event](./images/CloudTrailLog.png)
 
-<sub>Note: Sự kiện UpdateService được ghi nhận. User name: CostGuardLambda xác nhận hành động này do Automation thực hiện, thay đổi desiredCount về 0 để dừng tiêu tốn chi phí Fargate.</sub>
+    Note: Sự kiện UpdateService được ghi nhận. User name: CostGuardLambda xác nhận hành động này do Automation thực hiện, thay đổi desiredCount về 0 để dừng tiêu tốn chi phí Fargate.
 
 ---
 
@@ -400,29 +417,33 @@ Before:
 **Region:** us-west-2
 
 #### Context
-Trong quá trình vận hành hệ thống AWS tại Workshop W6, nhóm nhận thấy dữ liệu chi phí (AWS Billing & Cost Management) có độ trễ cập nhật từ **8 đến 24 giờ** trước khi xuất hiện chính thức trong Cost Explorer và kích hoạt các ngưỡng cảnh báo (Alerts) của AWS Budgets. 
+
+Trong quá trình vận hành hệ thống AWS tại Workshop W6, nhóm nhận thấy dữ liệu chi phí (AWS Billing & Cost Management) có độ trễ cập nhật từ **8 đến 24 giờ** trước khi xuất hiện chính thức trong Cost Explorer và kích hoạt các ngưỡng cảnh báo (Alerts) của AWS Budgets.
 
 Vì thời gian diễn ra workshop chỉ kéo dài 48 giờ, việc dựa hoàn toàn vào cơ chế kích hoạt tự động theo chi phí (Cost-driven trigger) từ Budgets là không khả thi, do dữ liệu tiêu dùng thực tế có thể chưa kịp ghi nhận trước khi buổi Demo kết thúc.
 
 #### Decision
+
 Nhóm HexaCode quyết định triển khai mô hình kiểm soát chi phí "lai" (Hybrid Governance Model) để đảm bảo tính sẵn sàng và khả năng demo:
 
 1.  **Thiết lập liên kết (Wiring):** Hoàn tất đấu nối chuỗi logic: **AWS Budgets ($150 Daily)** -> **SNS Topic** -> **Lambda (`CostGuardLambda`)**. Đây là cơ chế phản ứng (Reactive) cho môi trường Production dài hạn.
-2.  **Cơ chế kích hoạt chính (Primary Trigger):** Sử dụng **EventBridge Scheduler** (`daily-cost-guard`) chạy định kỳ theo **cron(0 9 * * ? *)** múi giờ **Asia/Ho_Chi_Minh**. Đây là cơ chế chủ động (Proactive) giúp dọn dẹp tài nguyên thừa hàng sáng mà không phụ thuộc vào độ trễ dữ liệu Billing.
+2.  **Cơ chế kích hoạt chính (Primary Trigger):** Sử dụng **EventBridge Scheduler** (`daily-cost-guard`) chạy định kỳ theo **cron(0 9 \* _ ? _)** múi giờ **Asia/Ho_Chi_Minh**. Đây là cơ chế chủ động (Proactive) giúp dọn dẹp tài nguyên thừa hàng sáng mà không phụ thuộc vào độ trễ dữ liệu Billing.
 3.  **Verification:** Sử dụng lệnh `aws sns publish` qua CloudShell để giả lập tín hiệu `ALARM` vượt ngưỡng ngân sách. Phương pháp này cho phép kiểm thử toàn bộ chuỗi phản ứng (End-to-end chain) ngay lập tức.
 
 #### Technical Details
-*   **Account ID:** `583909632851`
-*   **Budget Threshold:** $150.00/day
-*   **SNS Topic ARN:** `arn:aws:sns:us-west-2:583909632851:cost-guard-budget-alerts`
-*   **Lambda Function:** `CostGuardLambda`
-*   **Cron Schedule:** Chạy vào 09:00 AM hàng ngày (UTC+7).
+
+- **Account ID:** `583909632851`
+- **Budget Threshold:** $150.00/day
+- **SNS Topic ARN:** `arn:aws:sns:us-west-2:583909632851:cost-guard-budget-alerts`
+- **Lambda Function:** `CostGuardLambda`
+- **Cron Schedule:** Chạy vào 09:00 AM hàng ngày (UTC+7).
 
 #### Consequences
-*   **Trong Workshop:** Nhóm đã chứng minh được khả năng tự động hóa việc dừng (Stop) các ECS Services thông qua việc giả lập sự kiện SNS. Behavior của hệ thống trong Production đã được xác nhận thành công mà không cần chờ dữ liệu chi phí thật.
-*   **Trong Production thực tế:** Sự kết hợp này tạo ra lớp bảo mật chi phí 2 tầng: 
-    *   **Tầng 1 (Schedule):** Ngăn chặn việc quên tắt tài nguyên vào giờ cao điểm.
-    *   **Tầng 2 (Budget Alert):** Ngăn chặn các sự cố chi phí tăng đột biến do lỗi cấu hình hoặc bị tấn công tài nguyên, đảm bảo tổng thiệt hại không bao giờ vượt quá mức ngân sách đề ra.
+
+- **Trong Workshop:** Nhóm đã chứng minh được khả năng tự động hóa việc dừng (Stop) các ECS Services thông qua việc giả lập sự kiện SNS. Behavior của hệ thống trong Production đã được xác nhận thành công mà không cần chờ dữ liệu chi phí thật.
+- **Trong Production thực tế:** Sự kết hợp này tạo ra lớp bảo mật chi phí 2 tầng:
+  - **Tầng 1 (Schedule):** Ngăn chặn việc quên tắt tài nguyên vào giờ cao điểm.
+  - **Tầng 2 (Budget Alert):** Ngăn chặn các sự cố chi phí tăng đột biến do lỗi cấu hình hoặc bị tấn công tài nguyên, đảm bảo tổng thiệt hại không bao giờ vượt quá mức ngân sách đề ra.
 
 ---
 
@@ -434,7 +455,7 @@ Nhóm HexaCode quyết định triển khai mô hình kiểm soát chi phí "lai
 
 <sub>Note: Dashboard `HexaCode-Production-Observability` có backup metric/alarm widget và các widget metric chuẩn khác. Widget backup dùng data thật từ failed restore verification.</sub>
 
-### 4.2 Custom Metric — AWS Backup failure count
+### 4.2 Custom Metric
 
 **Metric đo gì:** Metric này đo độ trễ (latency) của quá trình xử lý AI Inference khi đi qua API Gateway. Nó thể hiện khoảng thời gian từ lúc API nhận được yêu cầu cho đến khi nhận được phản hồi từ dịch vụ inference phía sau (backend).
 
@@ -643,25 +664,21 @@ def lambda_handler(event, context):
 
 ### 5.6 Security Threat Statement
 
-> Temporary guide — xoá block này sau khi viết xong.
-> - Viết theo cấu trúc: `misconfiguration là gì -> data/asset nào bị ảnh hưởng -> attacker có thể làm gì`.
-> - Tránh viết chung chung kiểu “bị hack”; rubric muốn thấy blast radius cụ thể.
+A critical security misconfiguration was intentionally simulated by opening an inbound SSH rule (`TCP/22 → 0.0.0.0/0`) on the bastion host security group. Điều này cho phép bất kỳ IP nào trên internet attempt SSH access vào management infrastructure của hệ thống.
 
-**Guard fix misconfiguration gì:**
-`[e.g. "S3 bucket chứa Bedrock KB documents bị set public — mọi người trên internet có thể đọc toàn bộ nội dung knowledge base của app."]`
+If not remediated, the blast radius could include unauthorized access attempts against the management EC2 instance, credential brute-force attacks, infrastructure reconnaissance, hoặc lateral movement vào private VPC resources connected through the bastion layer.
 
-**Blast radius nếu không remediate:**
-`[e.g. "Toàn bộ 36 markdown documents của GeekBrain — bao gồm incident postmortems, SLA targets, team structure — bị lộ công khai. Kẻ tấn công có thể dùng thông tin này để social engineer hoặc target specific vulnerabilities."]`
+To mitigate this risk, an automated Security Guard workflow was implemented using Amazon EventBridge + Lambda. Khi CloudTrail detect event `AuthorizeSecurityGroupIngress`, EventBridge sẽ trigger Lambda để tự động revoke insecure ingress rule (`0.0.0.0/0`) khỏi Security Group. CloudTrail logs confirm successful remediation through the `RevokeSecurityGroupIngress` API event.
+
+Additionally, S3 Block Public Access and a deny-unencrypted-upload bucket policy were enabled to protect internal knowledge-base assets and prevent accidental public exposure or unencrypted object uploads.
 
 ---
 
 ### 5.7 Security-Cost Trade-off Statement
 
-> Temporary guide — xoá block này sau khi viết xong.
-> - Nêu **chi phí cụ thể** của control đã chọn, hoặc nói rõ là gần như zero-cost nếu chọn account-level BPA / deny policy.
-> - Sau đó giải thích vì sao chi phí đó đáng trả so với blast radius ở trên.
+The selected security controls have near-zero operational cost because they primarily rely on managed AWS control-plane services such as EventBridge, CloudTrail, S3 Block Public Access, and lightweight Lambda executions. Estimated cost is minimal compared to always-on security appliances or dedicated firewall infrastructure.
 
-`[1-2 câu nêu tên cost cụ thể và justification. Ví dụ: "KMS CMK tốn $1/tháng per key. Justified vì mỗi decrypt event được log kèm IAM principal — đây là audit trail bắt buộc khi data store chứa thông tin thi cử của người dùng. Cost $1/tháng nhỏ hơn nhiều so với rủi ro compliance khi không có audit trail."]`
+This trade-off is strongly justified because the implemented controls significantly reduce the blast radius of common cloud misconfigurations such as publicly exposed management ports or insecure S3 uploads. A single exposed bastion host or public storage bucket could lead to infrastructure compromise, data leakage, or unauthorized access to internal AI/knowledge-base assets — risks that far outweigh the small operational cost of these preventive and auto-remediation mechanisms.
 
 ---
 
@@ -677,18 +694,18 @@ def lambda_handler(event, context):
 
 ### Các quyết định kiến trúc và thiết kế chính từ W1-W5
 
-| Tuần | Quyết định chính |
-|---|---|
-| W1 | `[e.g. 3-tier architecture: CloudFront → API Gateway → ECS Fargate → RDS]` |
-| W2 | `[e.g. S3 cho static assets, IAM baseline với MFA trên root]` |
-| W3 | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]` |
-| W4 | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]` |
-| W5 | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
-| W6 | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]` |
+| Tuần | Quyết định chính                                                                                                        |
+| ---- | ----------------------------------------------------------------------------------------------------------------------- |
+| W1   | `[Cloudfront, Cloudwatch, S3, ALB, VPC, ASG, NAT Gateway, ElastiCache, RDS Postgresql]`                                 |
+| W2   | `[WAF, ACM, Shield, External ALB, Internal ALB, EC2, ASG, Cluster, ElastiCache, RDS, S3, SQS, NAT Gateway, Cloudtrail]` |
+| W3   | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]`                           |
+| W4   | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]`                                      |
+| W5   | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]`        |
+| W6   | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]`                 |
 
 ---
 
-## Bonus *(Tuỳ chọn)*
+## Bonus _(Tuỳ chọn)_
 
 > Chỉ điền nếu đã hoàn tất cả 4 must-have và Evidence Pack.
 
@@ -714,14 +731,15 @@ def lambda_handler(event, context):
 
 ---
 
-### B4 `[ ]` "Wasteful → Changed" Reflection 
+### B4 `[ ]` "Wasteful → Changed" Reflection
 
 ---
 
 ### B5 `[X]` Cost Anomaly Automation (+0.25)
 
-![Cost Anomaly Detection monitor](./images/w6-anomaly-monitor.png)
-<sub>Note: Monitor scope về `Application=HexaCode`, EventBridge rule trên `aws.costanomalydetection`, SNS notification nhận được.</sub>
+![cost anomaly](./images/costanomalyb51.png)
+
+![alt text](./images/costanomalyb52.png)
 
 ---
 
@@ -737,4 +755,24 @@ def lambda_handler(event, context):
 
 ---
 
-*— End of W6 Evidence Pack —*
+## END-TO-END:
+
+![alt text](./images/image.png)
+
+![alt text](./images/image-1.png)
+
+![alt text](./images/image-2.png)
+
+![alt text](./images/image-3.png)
+
+![alt text](./images/image-4.png)
+
+![alt text](./images/image-5.png)
+
+![alt text](./images/image-6.png)
+
+![alt text](./images/image-7.png)
+
+![alt text](./images/image-8.png)
+
+_— End of W6 Evidence Pack —_
