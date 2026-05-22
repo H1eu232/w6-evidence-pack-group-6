@@ -97,8 +97,6 @@
 
 ![Cost Explorer filter](./images/CostExplorer.png)
 
-![Cost Explorer filter](./images/CostExplorer2.png)
-
 <sub>Note: </sub>
 
 **Tool 3 — Cost Anomaly Detection :**
@@ -113,13 +111,9 @@
 
 ### 2.4 Baseline Cost Breakdown (sau ít nhất 24h data)
 
-![Baseline cost breakdown](./images/w6-baseline-cost.png)
+![Cost Breakdown](./images/CostExplorer2.png)
 
 <sub>Note: Screenshot Cost Explorer sau 24h redeploy, filter theo tag `Application=HexaCode`.</sub>
-
-> Temporary guide for paragraph — xoá sau khi viết observation thật.
-> - Viết theo mẫu: `Top 3 cost drivers là A, B, C; A cao vì ..., B đáng chú ý vì ..., C có thể tối ưu bằng ...`.
-> - Nếu nhóm đang chạy off-hours scaling thì nhớ đối chiếu với audit: live ECS services đã từng ở desired/running = 0 ngoài giờ, nên cost compute có thể thấp hơn dự đoán vào lúc chụp.
 
 **Quan sát top 3 cost driver:**
 
