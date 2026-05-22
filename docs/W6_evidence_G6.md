@@ -14,7 +14,7 @@
 
 ### W5 Feedback đã giải quyết
 
-![W5 feedback](./images/W5fb.png)
+![W5 feedback](./images/W5feeback.png)
 
 #### 1.1 API Gateway throttling không còn giữ mức 1 RPS
 
