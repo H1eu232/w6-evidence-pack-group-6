@@ -694,14 +694,14 @@ This trade-off is strongly justified because the implemented controls significan
 
 ### Các quyết định kiến trúc và thiết kế chính từ W1-W5
 
-| Tuần | Quyết định chính                                                                                                 |
-| ---- | ---------------------------------------------------------------------------------------------------------------- |
-| W1   | `[e.g. 3-tier architecture: CloudFront → API Gateway → ECS Fargate → RDS]`                                       |
-| W2   | `[e.g. S3 cho static assets, IAM baseline với MFA trên root]`                                                    |
-| W3   | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]`                    |
-| W4   | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]`                               |
-| W5   | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]` |
-| W6   | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]`          |
+| Tuần | Quyết định chính                                                                                                        |
+| ---- | ----------------------------------------------------------------------------------------------------------------------- |
+| W1   | `[Cloudfront, Cloudwatch, S3, ALB, VPC, ASG, NAT Gateway, ElastiCache, RDS Postgresql]`                                 |
+| W2   | `[WAF, ACM, Shield, External ALB, Internal ALB, EC2, ASG, Cluster, ElastiCache, RDS, S3, SQS, NAT Gateway, Cloudtrail]` |
+| W3   | `[e.g. RDS PostgreSQL / relational vì data có JOIN phức tạp giữa users-submissions-problems]`                           |
+| W4   | `[e.g. Bedrock Agent với Knowledge Base, Lambda orchestrator, Hybrid Search K=10]`                                      |
+| W5   | `[e.g. VPC Peering Production↔Management, Network Firewall với domain allowlist, EFS mount, API Gateway + auth]`        |
+| W6   | `[e.g. Cost tagging discipline, automated cost guard, CloudWatch observability, self-healing security]`                 |
 
 ---
 
@@ -756,6 +756,7 @@ This trade-off is strongly justified because the implemented controls significan
 ---
 
 ## END-TO-END:
+
 ![alt text](./images/image.png)
 
 ![alt text](./images/image-1.png)
@@ -773,7 +774,5 @@ This trade-off is strongly justified because the implemented controls significan
 ![alt text](./images/image-7.png)
 
 ![alt text](./images/image-8.png)
-
-
 
 _— End of W6 Evidence Pack —_
