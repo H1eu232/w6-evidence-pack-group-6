@@ -388,28 +388,13 @@ def stop_unprotected_services():
 
 ### 3.5 Budgets daily $150 → SNS → Lambda (Wire + Demo)
 
-![Budgets daily](./images/ProdBudget.png)
+Before:
 
-![Budgets SNS](./images/SNS.png)
+![sns_before](../images/SNSBefore.png)
 
-<sub>Note: Trạng thái Confirmed của Subscription với giao thức LAMBDA xác nhận rằng mọi thông báo 'ALARM' từ AWS Budgets sẽ được chuyển tiếp ngay lập tức đến Lambda function.</sub>
+    After:
 
-![Budgets SNS wiring](./images/CostGuard.png)
-
-<sub>Note: Kết quả demo chuỗi hành động (End-to-end chain). Màn hình CloudShell thực hiện sns publish giả lập, ngay lập tức CloudWatch Logs (Live tailing) ghi nhận Lambda nhận event và thực hiện quét/tắt service thành công. Điều này xác nhận hệ thống sẵn sàng hoạt động trong Production mà không cần chờ dữ liệu billing thật (latency 8-24h).</sub>
-
-**Test SNS publish — demonstrate chain:**
-
-```bash
-aws sns publish \
-  --topic-arn arn:aws:sns:us-west-2:583909632851:cost-guard-topic \
-  --message '{"AlarmName":"BudgetAlert","NewStateValue":"ALARM"}' \
-  --region us-west-2
-```
-
-![SNS test publish](./images/TestSNSPublish.png)
-
-<sub>Note: Manual SNS publish trigger Lambda → Lambda stop một resource → xác nhận chain hoạt động end-to-end mà không cần chờ cost data thật.</sub>
+![sns_after](../images/SNSAfter.png)
 
 ---
 
